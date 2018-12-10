@@ -8,8 +8,13 @@
 #include <vector>
 #include <utility>
 #include <fcntl.h>
+#ifdef WIN32
+#include <io.h>
+#include <Windows.h>
+#else
 #include <unistd.h>
 #include <sys/mman.h>
+#endif
 #include <sys/stat.h>
 #include <regex>
 
@@ -132,7 +137,7 @@ namespace sereno
     };
 
     /* \brief VTKParser class. Only support right now STRUCTURED_GRID and BINARY */
-    class VTKParser
+    struct DllExport VTKParser
     {
         public:
             /* \brief Constructor
@@ -255,9 +260,16 @@ namespace sereno
             uint32_t    m_minorVer = 0;            /*!< The minor version used*/
             uint32_t    m_majorVer = 0;            /*!< The major version used*/
             std::string m_header;
+#ifdef WIN32
+			HANDLE      m_fd       = INVALID_HANDLE_VALUE; /*!< The VTK file descriptor*/
+			HANDLE      m_mmapFile = INVALID_HANDLE_VALUE; /*!< The VTK file memory mapping handler*/
+			void*       m_mmapData = NULL;                 /*!< The memory mapping associated with the opened file*/
+			DWORD       m_fileLen  = 0;                    /*!< Record of the file length in bytes*/
+#else
             int         m_fd       = -1;           /*!< The VTK file descriptor*/
             void*       m_mmapData = MAP_FAILED;   /*!< The memory mapping associated with the opened file*/
-            uint32_t    m_fileLen  = 0;            /*!< Record of the file length in bytes*/
+			uint32_t    m_fileLen = 0;             /*!< Record of the file length in bytes*/
+#endif
 
             //The regexes
             static const std::regex versionRegex;      /*!< Regex checking the VERSIONing*/

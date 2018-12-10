@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#ifdef WIN32
+#define DllExport   __declspec( dllexport )
+#else
+#define DllExport
+#endif
+
 #define VTK_ENUM_BODY_STR(name, value, str)     \
     name value,
 

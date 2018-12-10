@@ -55,17 +55,29 @@ namespace sereno
         m_fileLen = st.st_size;
 
         //Open the file and do a memory mapping on it
+#ifdef WIN32
+		m_fd = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
+				          OPEN_EXISTING,
+						  FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_READONLY, NULL);
+		GetFileSize(m_fd, &m_fileLen);
+		m_mmapFile = CreateFileMapping(m_fd, NULL, PAGE_READONLY, 0, m_fileLen, (path + "_mmap").c_str());
+		m_mmapData = MapViewOfFile(m_mmapFile, FILE_MAP_ALL_ACCESS, 0, 0, m_fileLen);
+#else
         m_fd       = open(path.c_str(), O_RDONLY);
         m_mmapData = mmap(NULL, m_fileLen, PROT_READ, MAP_PRIVATE, m_fd, 0);
-
         if(m_mmapData == MAP_FAILED)
         {
             std::cerr << "Could not map the memory over the file " << path.c_str() << std::endl;
             return;
         }
+#endif
     }
 
-    VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type), m_fd(mvt.m_fd), m_mmapData(mvt.m_mmapData), m_fileLen(mvt.m_fileLen)
+    VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type), m_fd(mvt.m_fd), 
+#ifdef WIN32
+		m_mmapFile(mvt.m_mmapFile),
+#endif
+		m_mmapData(mvt.m_mmapData), m_fileLen(mvt.m_fileLen)
     {
         switch(mvt.m_type)
         {
@@ -76,9 +88,15 @@ namespace sereno
                 break;
         }
 
-        mvt.m_fd       = -1;
+#ifdef WIN32
+		mvt.m_fd = INVALID_HANDLE_VALUE;
+		mvt.m_mmapFile = INVALID_HANDLE_VALUE;
+		mvt.m_mmapData = NULL;
+#else
+		mvt.m_fd = -1;
         mvt.m_mmapData = MAP_FAILED;
-        mvt.m_type     = VTK_DATASET_TYPE_NONE;
+#endif
+		mvt.m_type     = VTK_DATASET_TYPE_NONE;
     }
 
     VTKParser::~VTKParser()
@@ -97,10 +115,16 @@ namespace sereno
 
     void VTKParser::closeParser()
     {
+#ifdef WIN32
+		UnmapViewOfFile(m_mmapData);
+		CloseHandle(m_mmapFile);
+		CloseHandle(m_fd);
+#else
         if(m_mmapData != MAP_FAILED)
             munmap(m_mmapData, m_fileLen);
         if(m_fd != -1)
             close(m_fd);
+#endif
     }
 
 #define GET_VTK_NEXT_LINE(x) \
@@ -115,7 +139,12 @@ namespace sereno
 
     bool VTKParser::parse()
     {
+#ifdef WIN32
+		int fd = _dup(_open_osfhandle((intptr_t)m_fd, _O_RDONLY));
+		FILE* f = _fdopen(fd, "r");
+#else
         FILE* f = fdopen(dup(m_fd), "r");
+#endif
         fseek(f, 0, SEEK_SET);
 
         std::smatch match;

@@ -14,13 +14,28 @@ set(CMAKE_CXX_STANDARD 14)
 set(INSTALL_LIB_DIR       "${CMAKE_INSTALL_PREFIX}/lib"             CACHE PATH "Installation directory for libraries")
 set(INSTALL_INC_DIR       "${CMAKE_INSTALL_PREFIX}/include"         CACHE PATH "Installation directory for headers")
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
+set(COMPILE_TEST FALSE CACHE BOOL "Should we compile the test program ?")
 
 set(VERSION 1.0)
+
+#Workaround for MSVC not creating DEBUG and RELEASE folder
+foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
+    string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
+    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/bin)
+    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/lib)
+    set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/lib)
+endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 #Debug version
 set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_CONFIGURATION_TYPES "Debug" CACHE STRING "" FORCE)
-set(CMAKE_CXX_FLAGS "-Wall -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /w14244")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+endif()
 
 #Set the sources and the headers
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
@@ -28,9 +43,6 @@ file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 set(PC ${CMAKE_BINARY_DIR}/serenoVTKParser.pc)
 
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
-
-#PKGConfig configuration
-find_package(PkgConfig REQUIRED)
 
 #Configure the executable : sources, compile options (CFLAGS) and link options (LDFLAGS)
 add_library(serenoVTKParser SHARED ${SOURCES} ${HEADERS})

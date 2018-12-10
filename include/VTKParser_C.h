@@ -56,12 +56,39 @@ namespace sereno
          */
 		DllExport struct VTKPointPositions VTKParser_getUnstructuredGridPointDescriptor(HVTKParser parser);
 
+		/**
+		  * \brief Get the dataset unstructured grid cell type descriptor
+		  * \param parser the parser containing the information
+		  * \return the cell type descriptor*/
+		DllExport struct VTKCellTypes VTKParser_getUnstructuredGridCellTypesDescriptor(HVTKParser parser);
+		/**
+		  * \brief Get the dataset unstructured grid cell type descriptor		 
+		  * \param parser the parser containing the information
+		  * \return the cells descriptor*/
+		DllExport struct VTKCells VTKParser_getUnstructuredGridCellDescriptor(HVTKParser parser);
+
         /**
          * \brief  Parse all unstructured grid point. Use getDatasetFormat for knowing the correct format (unstructured, structured, etc.)
          * \param parser the parser containing the information
          * \return   allocated memory containing the point values. Needs to be freed (free(val)). getUnstructuredGridPointFormat for knowing towards which type the result has to be parsed to. Nbvalues : use getUnstructuredGridPointDescriptor function
          */
 		DllExport void* VTKParser_parseAllUnstructuredGridPoints(HVTKParser parser);
+
+		/**
+		 * \brief Get the cells values
+		 * \param parser the parser containing the information
+		 * \return data of the cell section (CELLS).
+		 * These information tells you what points are related to the cells.
+		 * This has to be combined using parseAllUnstructuredGridCellTypes
+		 */
+		DllExport int32_t* VTKParser_parseAllUnstructuredGridCellsComposition(HVTKParser parser);
+
+		/**
+		 * \brief Get the cells types.
+		 * \param parser the parser containing the information
+		 * \return data of the cell_type section (CELL_TYPES).
+		 * These information tells you how to combine the points given by parseAllUnstructuredGridCellsComposition function*/
+		DllExport int32_t* VTKParser_parseAllUnstructuredGridCellTypes(HVTKParser parser);
 
         /**
          * \brief  Get the number of tuples from a VTKFieldValue descriptor object

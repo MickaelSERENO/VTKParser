@@ -25,10 +25,18 @@ int main(int argc, char* argv[])
     for(uint32_t i = 0; i < 2; i++)
         datas.push_back(VTKParser_parseAllCellFieldValues(parser, fieldValues[i]));
 
+	int32_t* cellsTypes = VTKParser_parseAllUnstructuredGridCellTypes(parser);
+	VTKCellTypes cellDescriptor = VTKParser_getUnstructuredGridCellTypesDescriptor(parser);
+
+	for (uint32_t i = 0; i < cellDescriptor.nbCells; i++)
+		if (cellsTypes[i] != 13)
+			std::cerr << "arf" << std::endl;
+
     //Free everything
     for(auto& it : datas)
         VTKParser_free(it);
-    VTKParser_free(data);
+	VTKParser_free(cellsTypes);
+	VTKParser_free(data);
     VTKParser_free(fieldValues);
     VTKParser_delete(parser);
     return 0;

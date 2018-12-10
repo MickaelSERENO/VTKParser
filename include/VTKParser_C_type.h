@@ -48,6 +48,30 @@ namespace sereno
     VTK_DEFINE_ENUM(VTKValueFormat, ENUM_VTK_VALUE_FORMAT)
     VTK_AS_DEC_INT (VTKValueFormat, ENUM_VTK_VALUE_FORMAT)
 
+#define ENUM_VTK_CELL_TYPE(_)                  \
+    _(VTK_CELL_VERTEX              , = 1 , 1)  \
+    _(VTK_CELL_POLYVERTEX          , = 2 , -1) \
+    _(VTK_CELL_LINE                ,     , 2)  \
+    _(VTK_CELL_POLYLINE            ,     , -1) \
+	_(VTK_CELL_TRIANGLE            ,     , 3)  \
+	_(VTK_CELL_TRIANGLE_STRIP      ,     , -1) \
+	_(VTK_CELL_POLYGON             ,     , -1) \
+	_(VTK_CELL_PIXEL               ,     , -1) \
+	_(VTK_CELL_QUAD                ,     , 4)  \
+	_(VTK_CELL_TETRA               ,     , 4)  \
+	_(VTK_CELL_VOXEL               ,     , 8)  \
+	_(VTK_CELL_HEXAHEDRON          ,     , 8)  \
+	_(VTK_CELL_WEDGE               ,     , 6)  \
+	_(VTK_CELL_PYRAMID             ,     , 5)  \
+	_(VTK_CELL_QUADRATIC_EDGE      , = 21, 3)  \
+	_(VTK_CELL_QUADRATIC_TRIANGLE  ,     , 6)  \
+	_(VTK_CELL_QUADRATIC_QUAD      ,     , 8)  \
+	_(VTK_CELL_QUADRATIC_TETRA     ,     , 10) \
+	_(VTK_CELL_QUADRATIC_HEXAHEDRON,     , 20)
+
+		VTK_DEFINE_ENUM(VTKCellType, ENUM_VTK_CELL_TYPE)
+		VTK_AS_DEC_INT(VTKCellType,  ENUM_VTK_CELL_TYPE)
+
     /* \brief The VTK file format (ascii / binary) */
     enum VTKFileFormat
     {

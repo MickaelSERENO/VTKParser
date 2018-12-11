@@ -91,4 +91,9 @@ namespace sereno
     {
         free(data);
     }
+
+	DllExport VTKCellConstruction VTKParser_getCellConstructionDescriptor(HVTKParser parser, uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
+	{
+		return VTKParser::getCellConstructionDescriptor(nbCells, cellValues, cellTypes);
+	}
 }

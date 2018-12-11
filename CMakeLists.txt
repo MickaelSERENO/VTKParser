@@ -14,7 +14,9 @@ set(CMAKE_CXX_STANDARD 14)
 set(INSTALL_LIB_DIR       "${CMAKE_INSTALL_PREFIX}/lib"             CACHE PATH "Installation directory for libraries")
 set(INSTALL_INC_DIR       "${CMAKE_INSTALL_PREFIX}/include"         CACHE PATH "Installation directory for headers")
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
-set(COMPILE_TEST FALSE CACHE BOOL "Should we compile the test program ?")
+
+set(COMPILE_TEST         FALSE CACHE BOOL "Should we compile the test program ?")
+set(COMPILE_C_SHARP_TEST FALSE CACHE BOOL "Should we compile the C# binding ?")
 
 set(VERSION 1.0)
 
@@ -88,4 +90,10 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(FILES ${PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
 
-
+if(COMPILE_C_SHARP_TEST)
+	enable_language(CSharp)
+	include(CSharpUtilities)
+	add_executable(serenoVTKParserCSharpTest ${CMAKE_CURRENT_SOURCE_DIR}/Bindings/C\#/VTKParser.cs)
+	target_compile_options(serenoVTKParserCSharpTest PUBLIC "/unsafe")
+	target_link_libraries(serenoVTKParserCSharpTest PUBLIC serenoVTKParser)
+endif()

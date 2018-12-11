@@ -489,6 +489,50 @@ namespace sereno
         return getAllBinaryValues(fieldData->offset, fieldData->nbTuples*fieldData->nbValuePerTuple, fieldData->format);
     }
 
+	VTKCellConstruction VTKParser::getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
+	{
+		VTKCellConstruction con;
+		con.mode   = VTK_GL_NO_MODE;
+		con.error  = 0;
+		con.size   = 0;
+		con.nbCell = 0;
+		con.next   = 0;
+
+		for(uint32_t i = 0; i < nbCells; i++)
+		{
+			//Determine which VTKCell to use
+			const VTKCellVT* cell = NULL;
+			switch (cellTypes[i])
+			{
+				case VTK_CELL_WEDGE:
+					cell = &vtkWedge;
+					break;
+				default:
+					goto error;
+
+			}
+
+			//Check type
+			if(con.mode != VTK_GL_NO_MODE && con.mode != cell->getMode())
+				return con;
+
+			//Check nbPoints (error)
+			if (cell->nbPoints() > 0 && cellValues[i] != cell->nbPoints())
+				goto error;
+
+			//add size, next and nbCell
+			con.size   += cell->sizeBuffer(cellValues);
+			con.next   += cellValues[0] + 1;
+			con.nbCell += cellValues[0];
+			cellValues += cellValues[0] + 1;
+		}
+
+		return con;
+	error:
+		con.error = 1;
+		return con;
+	}
+
     void* VTKParser::getAllBinaryValues(size_t offset, uint32_t nbValues, VTKValueFormat format) const
     {
 		int sizeFormat = VTKValueFormatInt(format);

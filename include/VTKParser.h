@@ -19,6 +19,8 @@
 #include <regex>
 
 #include "VTKParser_C_type.h"
+#include "Cells/VTKCell.h"
+#include "Cells/VTKWedge.h"
 
 namespace sereno
 {
@@ -216,6 +218,16 @@ namespace sereno
 			  * \brief Get the dataset unstructured grid cell type descriptor
 			  * \return the cells descriptor*/
 			VTKCells getUnStructuredGridCellDescriptor() const { return m_unstrGrid.cells; }
+
+			/**
+			 * \brief Get the cell construction descriptor. It the type needed to render the dataset changed, this function returns before having parsed everything
+			 * \param nbCells    the number of cells to read
+			 * \param ptValues   the point values (see parseAllUnstructuredGridPoints)
+			 * \param cellValues the cell values (see parseAllUnstructuredGridCells)
+			 * \param cellTypes  the cell types (see parseAllUnstructuredGridCellTypes)
+			 * \return a VTKCellConstruction telling the buffer size and the advancement for the next datasets
+			 */
+			static VTKCellConstruction getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes);
         private:
             VTKParser(const VTKParser& copy);
             VTKParser& operator=(const VTKParser& copy);

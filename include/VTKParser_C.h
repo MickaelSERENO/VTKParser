@@ -126,6 +126,8 @@ namespace sereno
          */
 		DllExport void* VTKParser_parseAllCellFieldValues(HVTKParser parser, HVTKFieldValue value);
 
+		DllExport VTKCellConstruction VTKParser_getCellConstructionDescriptor(HVTKParser parser, uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes);
+
         /**
          * \brief  Free function calling "free"
          * \param data the data to free

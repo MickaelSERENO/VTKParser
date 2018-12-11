@@ -533,6 +533,40 @@ namespace sereno
 		return con;
 	}
 
+	void VTKParser::fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer)
+	{
+		uint32_t offset = 0;
+		for (uint32_t i = 0; i < nbCells; i++)
+		{
+			//Determine which VTKCell to use
+			const VTKCellVT* cell = NULL;
+			switch (cellTypes[i])
+			{
+			case VTK_CELL_WEDGE:
+				cell = &vtkWedge;
+				break;
+			default:
+				return;
+			}
+
+			switch(m_unstrGrid.ptsPos.format)
+			{
+				case VTK_INT:
+					cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((int*)buffer) + offset);
+					break;
+				case VTK_FLOAT:
+					cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((float*)buffer) + offset);
+					break;
+				case VTK_DOUBLE:
+					cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((double*)buffer) + offset);
+					break;
+				default:
+					return;
+			}
+			offset += cell->sizeBuffer(cellValues);
+		}
+	}
+
     void* VTKParser::getAllBinaryValues(size_t offset, uint32_t nbValues, VTKValueFormat format) const
     {
 		int sizeFormat = VTKValueFormatInt(format);

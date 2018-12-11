@@ -125,7 +125,9 @@ namespace sereno
         [DllImport("serenoVTKParser")]
         public extern static IntPtr VTKParser_parseAllUnstructuredGridPoints(IntPtr parser);
         [DllImport("serenoVTKParser")]
-        public unsafe extern static VTKCellConstruction VTKParser_getCellConstructionDescriptor(IntPtr parser, UInt32 nbCells, Int32* cellValues, Int32* cellTypes);
+        public unsafe extern static VTKCellConstruction VTKParser_getCellConstructionDescriptor(UInt32 nbCells, Int32* cellValues, Int32* cellTypes);
+        [DllImport("serenoVTKParser")]
+        public unsafe extern static void VTKParser_fillUnstructuredCellBuffer(IntPtr parser, UInt32 nbCells, IntPtr ptValues, Int32* cellValues, Int32* cellTypes, IntPtr buffer);
 
         //Field Value
         [DllImport("serenoVTKParser")]
@@ -304,11 +306,19 @@ namespace sereno
             return val;
         }
 
-        VTKCellConstruction GetCellConstructionDescriptor(UInt32 nbCells, VTKValue cellValues, VTKValue cellTypes)
+        unsafe void FillUnstructuredCellBuffer(UInt32 nbCells, VTKValue ptValues, VTKValue cellValues, VTKValue cellTypes, IntPtr buffer)
+        {
+            unsafe
+            {
+                VTKInterop.VTKParser_fillUnstructuredCellBuffer(m_parser, nbCells, ptValues.Value, (Int32*)cellValues.Value, (Int32*)cellTypes.Value, buffer);
+            }
+        }
+
+        static VTKCellConstruction GetCellConstructionDescriptor(UInt32 nbCells, VTKValue cellValues, VTKValue cellTypes)
         {
             unsafe
             { 
-                return VTKInterop.VTKParser_getCellConstructionDescriptor(m_parser, nbCells, (Int32*)cellValues.Value, (Int32*)cellTypes.Value);
+                return VTKInterop.VTKParser_getCellConstructionDescriptor(nbCells, (Int32*)cellValues.Value, (Int32*)cellTypes.Value);
             }
         }
 

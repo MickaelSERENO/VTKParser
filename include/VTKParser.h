@@ -219,6 +219,8 @@ namespace sereno
 			  * \return the cells descriptor*/
 			VTKCells getUnStructuredGridCellDescriptor() const { return m_unstrGrid.cells; }
 
+			void fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer);
+
 			/**
 			 * \brief Get the cell construction descriptor. It the type needed to render the dataset changed, this function returns before having parsed everything
 			 * \param nbCells    the number of cells to read

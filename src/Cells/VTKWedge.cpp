@@ -50,7 +50,7 @@ namespace sereno
 		return VTK_GL_TRIANGLES;
 	}
 
-	int32_t   VTKWedge_nbPoints()
+	int32_t VTKWedge_nbPoints()
 	{
 		return 8;
 	}

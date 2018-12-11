@@ -92,8 +92,13 @@ namespace sereno
         free(data);
     }
 
-	DllExport VTKCellConstruction VTKParser_getCellConstructionDescriptor(HVTKParser parser, uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
+	DllExport VTKCellConstruction VTKParser_getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
 	{
 		return VTKParser::getCellConstructionDescriptor(nbCells, cellValues, cellTypes);
+	}
+
+	DllExport void VTKParser_fillUnstructuredCellBuffer(HVTKParser parser, uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer)
+	{
+		parser->fillUnstructuredCellBuffer(nbCells, ptValues, cellValues, cellTypes, buffer);
 	}
 }

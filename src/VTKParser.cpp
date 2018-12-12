@@ -55,13 +55,13 @@ namespace sereno
 
         //Open the file and do a memory mapping on it
 #ifdef WIN32
-		m_fd = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-			              FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_TEMPORARY, INVALID_HANDLE_VALUE);
-		if(m_fd == INVALID_HANDLE_VALUE)
-			return;
-		m_file = _fdopen(_open_osfhandle((intptr_t)m_fd, _O_RDONLY), "r");
+        m_fd = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                          FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_TEMPORARY, INVALID_HANDLE_VALUE);
+        if(m_fd == INVALID_HANDLE_VALUE)
+            return;
+        m_file = _fdopen(_open_osfhandle((intptr_t)m_fd, _O_RDONLY), "r");
 #else
-		m_fileLen = st.st_size;
+        m_fileLen = st.st_size;
         m_fd       = open(path.c_str(), O_RDONLY);
         m_mmapData = mmap(NULL, m_fileLen, PROT_READ, MAP_PRIVATE, m_fd, 0);
         if(m_mmapData == MAP_FAILED)
@@ -74,9 +74,9 @@ namespace sereno
 
     VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type)
 #ifdef WIN32
-		, m_fd(mvt.m_fd), m_file(mvt.m_file)
+        , m_fd(mvt.m_fd), m_file(mvt.m_file)
 #else
-		, m_fd(mvt.m_fd), m_mmapData(mvt.m_mmapData), m_fileLen(mvt.m_fileLen)
+        , m_fd(mvt.m_fd), m_mmapData(mvt.m_mmapData), m_fileLen(mvt.m_fileLen)
 #endif
     {
         switch(mvt.m_type)
@@ -89,13 +89,13 @@ namespace sereno
         }
 
 #ifdef WIN32
-		mvt.m_file = NULL;
-		mvt.m_fd   = INVALID_HANDLE_VALUE;
+        mvt.m_file = NULL;
+        mvt.m_fd   = INVALID_HANDLE_VALUE;
 #else
-		mvt.m_fd = -1;
+        mvt.m_fd = -1;
         mvt.m_mmapData = MAP_FAILED;
 #endif
-		mvt.m_type     = VTK_DATASET_TYPE_NONE;
+        mvt.m_type     = VTK_DATASET_TYPE_NONE;
     }
 
     VTKParser::~VTKParser()
@@ -115,8 +115,8 @@ namespace sereno
     void VTKParser::closeParser()
     {
 #ifdef WIN32
-		if(m_file)
-			fclose(m_file);
+        if(m_file)
+            fclose(m_file);
 #else
         if(m_mmapData != MAP_FAILED)
             munmap(m_mmapData, m_fileLen);
@@ -138,9 +138,9 @@ namespace sereno
     bool VTKParser::parse()
     {
 #ifdef WIN32
-		if(!m_file)
-			return false;
-		FILE* f = m_file;
+        if(!m_file)
+            return false;
+        FILE* f = m_file;
 #else
         FILE* f = fdopen(dup(m_fd), "r");
 #endif
@@ -243,7 +243,7 @@ namespace sereno
         fclose(f);
 #endif
         return true;
-	error:
+    error:
 #if WIN32
 #else
         fclose(f);
@@ -454,15 +454,15 @@ namespace sereno
         return getAllBinaryValues(m_unstrGrid.ptsPos.offset, m_unstrGrid.ptsPos.nbPoints*3, m_unstrGrid.ptsPos.format);
     }
 
-	int32_t* VTKParser::parseAllUnstructuredGridCellsComposition() const
-	{
-		return (int32_t*)getAllBinaryValues(m_unstrGrid.cells.offset, m_unstrGrid.cells.wholeSize*VTKValueFormatInt(VTK_INT), VTK_INT);
-	}
+    int32_t* VTKParser::parseAllUnstructuredGridCellsComposition() const
+    {
+        return (int32_t*)getAllBinaryValues(m_unstrGrid.cells.offset, m_unstrGrid.cells.wholeSize*VTKValueFormatInt(VTK_INT), VTK_INT);
+    }
 
-	int32_t* VTKParser::parseAllUnstructuredGridCellTypes() const
-	{
-		return (int32_t*)getAllBinaryValues(m_unstrGrid.cellTypes.offset, m_unstrGrid.cellTypes.nbCells*VTKValueFormatInt(VTK_INT), VTK_INT);
-	}
+    int32_t* VTKParser::parseAllUnstructuredGridCellTypes() const
+    {
+        return (int32_t*)getAllBinaryValues(m_unstrGrid.cellTypes.offset, m_unstrGrid.cellTypes.nbCells*VTKValueFormatInt(VTK_INT), VTK_INT);
+    }
 
     std::vector<std::string> VTKParser::getCellFieldValueNames() const
     {
@@ -489,92 +489,92 @@ namespace sereno
         return getAllBinaryValues(fieldData->offset, fieldData->nbTuples*fieldData->nbValuePerTuple, fieldData->format);
     }
 
-	VTKCellConstruction VTKParser::getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
-	{
-		VTKCellConstruction con;
-		con.mode   = VTK_GL_NO_MODE;
-		con.error  = 0;
-		con.size   = 0;
-		con.nbCell = 0;
-		con.next   = 0;
+    VTKCellConstruction VTKParser::getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
+    {
+        VTKCellConstruction con;
+        con.mode   = VTK_GL_NO_MODE;
+        con.error  = 0;
+        con.size   = 0;
+        con.nbCell = 0;
+        con.next   = 0;
 
-		for(uint32_t i = 0; i < nbCells; i++)
-		{
-			//Determine which VTKCell to use
-			const VTKCellVT* cell = NULL;
-			switch (cellTypes[i])
-			{
-				case VTK_CELL_WEDGE:
-					cell = &vtkWedge;
-					break;
-				default:
-					goto error;
+        for(uint32_t i = 0; i < nbCells; i++)
+        {
+            //Determine which VTKCell to use
+            const VTKCellVT* cell = NULL;
+            switch (cellTypes[i])
+            {
+                case VTK_CELL_WEDGE:
+                    cell = &vtkWedge;
+                    break;
+                default:
+                    goto error;
 
-			}
+            }
 
-			//Check type
-			if(con.mode != VTK_GL_NO_MODE && con.mode != cell->getMode())
-				return con;
+            //Check type
+            if(con.mode != VTK_GL_NO_MODE && con.mode != cell->getMode())
+                return con;
 
-			//Check nbPoints (error)
-			if (cell->nbPoints() > 0 && cellValues[i] != cell->nbPoints())
-				goto error;
+            //Check nbPoints (error)
+            if (cell->nbPoints() > 0 && cellValues[i] != cell->nbPoints())
+                goto error;
 
-			//add size, next and nbCell
-			con.size   += cell->sizeBuffer(cellValues);
-			con.next   += cellValues[0] + 1;
-			con.nbCell += cellValues[0];
-			cellValues += cellValues[0] + 1;
-		}
+            //add size, next and nbCell
+            con.size   += cell->sizeBuffer(cellValues);
+            con.next   += cellValues[0] + 1;
+            con.nbCell += cellValues[0];
+            cellValues += cellValues[0] + 1;
+        }
 
-		return con;
-	error:
-		con.error = 1;
-		return con;
-	}
+        return con;
+    error:
+        con.error = 1;
+        return con;
+    }
 
-	void VTKParser::fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer)
-	{
-		uint32_t offset = 0;
-		for (uint32_t i = 0; i < nbCells; i++)
-		{
-			//Determine which VTKCell to use
-			const VTKCellVT* cell = NULL;
-			switch (cellTypes[i])
-			{
-			case VTK_CELL_WEDGE:
-				cell = &vtkWedge;
-				break;
-			default:
-				return;
-			}
+    void VTKParser::fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer)
+    {
+        uint32_t offset = 0;
+        for (uint32_t i = 0; i < nbCells; i++)
+        {
+            //Determine which VTKCell to use
+            const VTKCellVT* cell = NULL;
+            switch (cellTypes[i])
+            {
+            case VTK_CELL_WEDGE:
+                cell = &vtkWedge;
+                break;
+            default:
+                return;
+            }
 
-			switch(m_unstrGrid.ptsPos.format)
-			{
-				case VTK_INT:
-					cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((int*)buffer) + offset);
-					break;
-				case VTK_FLOAT:
-					cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((float*)buffer) + offset);
-					break;
-				case VTK_DOUBLE:
-					cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((double*)buffer) + offset);
-					break;
-				default:
-					return;
-			}
-			offset += cell->sizeBuffer(cellValues);
-		}
-	}
+            switch(m_unstrGrid.ptsPos.format)
+            {
+                case VTK_INT:
+                    cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((int*)buffer) + offset);
+                    break;
+                case VTK_FLOAT:
+                    cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((float*)buffer) + offset);
+                    break;
+                case VTK_DOUBLE:
+                    cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((double*)buffer) + offset);
+                    break;
+                default:
+                    return;
+            }
+            offset += cell->sizeBuffer(cellValues);
+        }
+    }
 
     void* VTKParser::getAllBinaryValues(size_t offset, uint32_t nbValues, VTKValueFormat format) const
     {
-		int sizeFormat = VTKValueFormatInt(format);
+        int sizeFormat = VTKValueFormatInt(format);
 #if WIN32
-		uint8_t buffer[8];
-		fseek(m_file, offset, SEEK_SET);
+        uint8_t buffer[8];
+        fseek(m_file, offset, SEEK_SET);
 #else
-		uint8_t* buffer = (uint8_t*)m_mmapData;
+        uint8_t* buffer = (uint8_t*)m_mmapData;
 #endif
         uint8_t* data = (uint8_t*)malloc(sizeFormat*nbValues);
         union
@@ -588,9 +588,9 @@ namespace sereno
         for(uint64_t i = 0; i < nbValues; i++)
         {
 #if WIN32
-			fread(buffer, 1, sizeFormat, m_file);
+            fread(buffer, 1, sizeFormat, m_file);
 #else
-			buffer += offset + i * sizeFormat
+            buffer += offset + i * sizeFormat;
 #endif
             switch(format)
             {

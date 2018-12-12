@@ -28,15 +28,15 @@ namespace sereno
         return parser->getUnstructuredGridPointDescriptor();
     }
 
-	struct VTKCellTypes VTKParser_getUnstructuredGridCellTypesDescriptor(HVTKParser parser)
-	{
-		return parser->getUnStructuredGridCellTypesDescriptor();
-	}
+    struct VTKCellTypes VTKParser_getUnstructuredGridCellTypesDescriptor(HVTKParser parser)
+    {
+        return parser->getUnStructuredGridCellTypesDescriptor();
+    }
 
-	struct VTKCells VTKParser_getUnstructuredGridCellDescriptor(HVTKParser parser)
-	{
-		return parser->getUnStructuredGridCellDescriptor();
-	}
+    struct VTKCells VTKParser_getUnstructuredGridCellDescriptor(HVTKParser parser)
+    {
+        return parser->getUnStructuredGridCellDescriptor();
+    }
 
     HVTKFieldValue* VTKParser_getCellFieldValueDescriptors(HVTKParser parser, size_t* nb)
     {
@@ -52,15 +52,15 @@ namespace sereno
         return parser->parseAllUnstructuredGridPoints();
     }
 
-	int32_t* VTKParser_parseAllUnstructuredGridCellsComposition(HVTKParser parser)
-	{
-		return parser->parseAllUnstructuredGridCellsComposition();
-	}
+    int32_t* VTKParser_parseAllUnstructuredGridCellsComposition(HVTKParser parser)
+    {
+        return parser->parseAllUnstructuredGridCellsComposition();
+    }
 
-	int32_t* VTKParser_parseAllUnstructuredGridCellTypes(HVTKParser parser)
-	{
-		return parser->parseAllUnstructuredGridCellTypes();
-	}
+    int32_t* VTKParser_parseAllUnstructuredGridCellTypes(HVTKParser parser)
+    {
+        return parser->parseAllUnstructuredGridCellTypes();
+    }
 
     uint32_t VTKParser_getFieldNbTuples(HVTKFieldValue value)
     {
@@ -92,13 +92,13 @@ namespace sereno
         free(data);
     }
 
-	DllExport VTKCellConstruction VTKParser_getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
-	{
-		return VTKParser::getCellConstructionDescriptor(nbCells, cellValues, cellTypes);
-	}
+    DllExport VTKCellConstruction VTKParser_getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
+    {
+        return VTKParser::getCellConstructionDescriptor(nbCells, cellValues, cellTypes);
+    }
 
-	DllExport void VTKParser_fillUnstructuredCellBuffer(HVTKParser parser, uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer)
-	{
-		parser->fillUnstructuredCellBuffer(nbCells, ptValues, cellValues, cellTypes, buffer);
-	}
+    DllExport void VTKParser_fillUnstructuredCellBuffer(HVTKParser parser, uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer)
+    {
+        parser->fillUnstructuredCellBuffer(nbCells, ptValues, cellValues, cellTypes, buffer);
+    }
 }

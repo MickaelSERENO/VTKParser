@@ -164,19 +164,19 @@ namespace sereno
              * \return a buffer containing the points value. Verify the point type before casting ! Need to be free (using free) */
             void* parseAllUnstructuredGridPoints() const; 
 
-			/**
-			 * \brief Get the cells values
-			 * \return data of the cell section (CELLS).
-			 * These information tells you what points are related to the cells.
-			 * This has to be combined using parseAllUnstructuredGridCellTypes
-			 */
-			int32_t* parseAllUnstructuredGridCellsComposition() const;
+            /**
+             * \brief Get the cells values
+             * \return data of the cell section (CELLS).
+             * These information tells you what points are related to the cells.
+             * This has to be combined using parseAllUnstructuredGridCellTypes
+             */
+            int32_t* parseAllUnstructuredGridCellsComposition() const;
 
-			/**
-			 * \brief Get the cells types.
-			 * \return data of the cell_type section (CELL_TYPES).
-			 * These information tells you how to combine the points given by parseAllUnstructuredGridCellsComposition function*/
-			int32_t* parseAllUnstructuredGridCellTypes() const;
+            /**
+             * \brief Get the cells types.
+             * \return data of the cell_type section (CELL_TYPES).
+             * These information tells you how to combine the points given by parseAllUnstructuredGridCellsComposition function*/
+            int32_t* parseAllUnstructuredGridCellTypes() const;
 
             /**
              * \brief  Get the field names present in the cell data
@@ -209,27 +209,27 @@ namespace sereno
              */
             VTKPointPositions getUnstructuredGridPointDescriptor() const {return m_unstrGrid.ptsPos;}
 
-			/**
-			  * \brief Get the dataset unstructured grid cell type descriptor
-			  * \return the cell type descriptor*/
-			VTKCellTypes getUnStructuredGridCellTypesDescriptor() const { return m_unstrGrid.cellTypes; }
+            /**
+              * \brief Get the dataset unstructured grid cell type descriptor
+              * \return the cell type descriptor*/
+            VTKCellTypes getUnStructuredGridCellTypesDescriptor() const { return m_unstrGrid.cellTypes; }
 
-			/**
-			  * \brief Get the dataset unstructured grid cell type descriptor
-			  * \return the cells descriptor*/
-			VTKCells getUnStructuredGridCellDescriptor() const { return m_unstrGrid.cells; }
+            /**
+              * \brief Get the dataset unstructured grid cell type descriptor
+              * \return the cells descriptor*/
+            VTKCells getUnStructuredGridCellDescriptor() const { return m_unstrGrid.cells; }
 
-			void fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer);
+            void fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer);
 
-			/**
-			 * \brief Get the cell construction descriptor. It the type needed to render the dataset changed, this function returns before having parsed everything
-			 * \param nbCells    the number of cells to read
-			 * \param ptValues   the point values (see parseAllUnstructuredGridPoints)
-			 * \param cellValues the cell values (see parseAllUnstructuredGridCells)
-			 * \param cellTypes  the cell types (see parseAllUnstructuredGridCellTypes)
-			 * \return a VTKCellConstruction telling the buffer size and the advancement for the next datasets
-			 */
-			static VTKCellConstruction getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes);
+            /**
+             * \brief Get the cell construction descriptor. It the type needed to render the dataset changed, this function returns before having parsed everything
+             * \param nbCells    the number of cells to read
+             * \param ptValues   the point values (see parseAllUnstructuredGridPoints)
+             * \param cellValues the cell values (see parseAllUnstructuredGridCells)
+             * \param cellTypes  the cell types (see parseAllUnstructuredGridCellTypes)
+             * \return a VTKCellConstruction telling the buffer size and the advancement for the next datasets
+             */
+            static VTKCellConstruction getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes);
         private:
             VTKParser(const VTKParser& copy);
             VTKParser& operator=(const VTKParser& copy);
@@ -299,12 +299,12 @@ namespace sereno
             uint32_t    m_majorVer = 0;            /*!< The major version used*/
             std::string m_header;
 #ifdef WIN32
-			HANDLE      m_fd   = INVALID_HANDLE_VALUE; /*!< The Windows Handle object*/
-			FILE*       m_file = NULL;                 /*!< The VTK file descriptor*/
+            HANDLE      m_fd   = INVALID_HANDLE_VALUE; /*!< The Windows Handle object*/
+            FILE*       m_file = NULL;                 /*!< The VTK file descriptor*/
 #else
             int         m_fd       = -1;           /*!< The VTK file descriptor*/
             void*       m_mmapData = MAP_FAILED;   /*!< The memory mapping associated with the opened file*/
-			uint32_t    m_fileLen = 0;             /*!< Record of the file length in bytes*/
+            uint32_t    m_fileLen = 0;             /*!< Record of the file length in bytes*/
 #endif
 
             //The regexes

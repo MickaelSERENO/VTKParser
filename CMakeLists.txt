@@ -16,7 +16,9 @@ set(INSTALL_INC_DIR       "${CMAKE_INSTALL_PREFIX}/include"         CACHE PATH "
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
 
 set(COMPILE_TEST         FALSE CACHE BOOL "Should we compile the test program ?")
-set(COMPILE_C_SHARP_TEST FALSE CACHE BOOL "Should we compile the C# binding ?")
+if(MSVC)
+    set(COMPILE_C_SHARP_TEST FALSE CACHE BOOL "Should we compile the C# binding ?")
+endif()
 
 set(VERSION 1.0)
 
@@ -90,7 +92,7 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
     install(FILES ${PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 endif()
 
-if(COMPILE_C_SHARP_TEST)
+if(COMPILE_C_SHARP_TEST AND MSVC)
 	enable_language(CSharp)
 	include(CSharpUtilities)
 	add_executable(serenoVTKParserCSharpTest ${CMAKE_CURRENT_SOURCE_DIR}/Bindings/C\#/VTKParser.cs)

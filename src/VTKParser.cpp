@@ -456,12 +456,12 @@ namespace sereno
 
     int32_t* VTKParser::parseAllUnstructuredGridCellsComposition() const
     {
-        return (int32_t*)getAllBinaryValues(m_unstrGrid.cells.offset, m_unstrGrid.cells.wholeSize*VTKValueFormatInt(VTK_INT), VTK_INT);
+        return (int32_t*)getAllBinaryValues(m_unstrGrid.cells.offset, m_unstrGrid.cells.wholeSize, VTK_INT);
     }
 
     int32_t* VTKParser::parseAllUnstructuredGridCellTypes() const
     {
-        return (int32_t*)getAllBinaryValues(m_unstrGrid.cellTypes.offset, m_unstrGrid.cellTypes.nbCells*VTKValueFormatInt(VTK_INT), VTK_INT);
+        return (int32_t*)getAllBinaryValues(m_unstrGrid.cellTypes.offset, m_unstrGrid.cellTypes.nbCells, VTK_INT);
     }
 
     std::vector<std::string> VTKParser::getCellFieldValueNames() const
@@ -574,7 +574,7 @@ namespace sereno
         uint8_t buffer[8];
         fseek(m_file, offset, SEEK_SET);
 #else
-        uint8_t* buffer = (uint8_t*)m_mmapData;
+        uint8_t* buffer = (uint8_t*)m_mmapData + offset;
 #endif
         uint8_t* data = (uint8_t*)malloc(sizeFormat*nbValues);
         union
@@ -590,7 +590,6 @@ namespace sereno
 #if WIN32
             fread(buffer, 1, sizeFormat, m_file);
 #else
-            buffer += offset + i * sizeFormat;
 #endif
             switch(format)
             {
@@ -608,6 +607,10 @@ namespace sereno
                     return NULL;
             }
             memcpy(data+i*sizeFormat, &val.c, sizeFormat);
+#if WIN32
+#else
+            buffer += sizeFormat;
+#endif
         }
         return (void*)data;
     }

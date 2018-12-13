@@ -25,14 +25,36 @@ namespace sereno
         VTK_GL_NO_MODE
     }
 
+    /// <summary>
+    /// VTK cell construction structure. It contains meta data about celle construction (buffer size, etc.).
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct VTKCellConstruction
     {
-        UInt32    size;
-        VTKGLMode mode;
-        UInt32    nbCell;
-        UInt32    next;
-        char      error;
+        /// <summary>
+        /// Buffer size needed to store the data
+        /// </summary>
+        public UInt32    Size; 
+
+        /// <summary>
+        /// The OpenGL Mode needed to render this
+        /// </summary>
+		public VTKGLMode Mode;
+
+        /// <summary>
+        /// The number of cells to consider for this data
+        /// </summary>
+		public UInt32    NbCell;
+
+        /// <summary>
+        /// What is the offset to apply to the cells data for getting to the next cells to parse ?
+        /// </summary>
+		public UInt32    Next;
+
+        /// <summary>
+        /// Was there an error ? (0 == false, 1 == true)
+        /// </summary>
+		public char      Error;
     }
 
     /// <summary>
@@ -127,7 +149,7 @@ namespace sereno
         [DllImport("serenoVTKParser")]
         public unsafe extern static VTKCellConstruction VTKParser_getCellConstructionDescriptor(UInt32 nbCells, Int32* cellValues, Int32* cellTypes);
         [DllImport("serenoVTKParser")]
-        public unsafe extern static void VTKParser_fillUnstructuredCellBuffer(IntPtr parser, UInt32 nbCells, IntPtr ptValues, Int32* cellValues, Int32* cellTypes, IntPtr buffer);
+        public unsafe extern static void VTKParser_fillUnstructuredCellBuffer(IntPtr parser, UInt32 nbCells, IntPtr ptValues, Int32* cellValues, Int32* cellTypes, IntPtr buffer, VTKValueFormat destFormat);
 
         //Field Value
         [DllImport("serenoVTKParser")]
@@ -210,7 +232,7 @@ namespace sereno
         /// Constructor. Initialize the Parser without parsing anything
         /// </summary>
         /// <param name="path">The Path.</param>
-        VTKParser(String path)
+        public VTKParser(String path)
         {
             m_parser = VTKInterop.VTKParser_new(path);
         }
@@ -223,7 +245,7 @@ namespace sereno
         /// <summary>
         /// Parse the VTK file object for getting information (without retrieving values).
         /// </summary>
-        bool Parse()
+        public bool Parse()
         {
             return VTKInterop.VTKParser_parse(m_parser) != 0;
         }
@@ -232,7 +254,7 @@ namespace sereno
         /// Get the values of Cell composition for unstructured grid. Use TODO for getting triangle composition of these cells
         /// </summary>
         /// <returns>A VTKValue of the cell composition. Format : VTK_INT</returns>
-        VTKValue ParseAllUnstructuredGridCellsComposition()
+        public VTKValue ParseAllUnstructuredGridCellsComposition()
         {
             VTKCells desc = VTKInterop.VTKParser_getUnstructuredGridCellDescriptor(m_parser);
             VTKValue res  = new VTKValue();
@@ -248,10 +270,10 @@ namespace sereno
 
         /// <summary>
         /// Get the values of Cell Types for understanding how to merge the points described in ParseAllUnstructuredGridCellsComposition. 
-        /// Use TODO for getting triangle composition of these cells 
+        /// Use FillUnstructuredCellBuffer for getting triangle composition of these cells 
         /// </summary>
         /// <returns>A VTKValue of all the cell types of this dataset. Format : VTK_INT</returns>
-        VTKValue ParseAllUnstructuredGridCellTypesDescriptor()
+        public VTKValue ParseAllUnstructuredGridCellTypesDescriptor()
         {
             VTKCellTypes desc = VTKInterop.VTKParser_getUnstructuredGridCellTypesDescriptor(m_parser);
             VTKValue     res  = new VTKValue();
@@ -270,7 +292,7 @@ namespace sereno
         /// Get the Field Value descriptors for Cells data (data per cell).
         /// </summary>
         /// <returns>List of all the Field Value available in this dataset</returns>
-        List<VTKFieldValue> GetCellFieldValueDescriptors()
+        public List<VTKFieldValue> GetCellFieldValueDescriptors()
         {
             List<VTKFieldValue> list = new List<VTKFieldValue>();
             unsafe
@@ -293,10 +315,10 @@ namespace sereno
 
         /// <summary>
         /// Parse all the Unstructured Grid Points available in this dataset.   
-        /// Use TODO for getting triangle composition of these cells 
+        /// Use FillUnstructuredCellBuffer for getting triangle composition of these cells 
         /// </summary>
         /// <returns>A VTKValue of these points.</returns>
-        VTKValue ParseAllUnstructuredGridPoints()
+        public VTKValue ParseAllUnstructuredGridPoints()
         {
             VTKValue          val = new VTKValue();
             VTKPointPositions pos = VTKInterop.VTKParser_getUnstructuredGridPointDescriptor(m_parser);
@@ -306,15 +328,15 @@ namespace sereno
             return val;
         }
 
-        unsafe void FillUnstructuredCellBuffer(UInt32 nbCells, VTKValue ptValues, VTKValue cellValues, VTKValue cellTypes, IntPtr buffer)
+		public unsafe void FillUnstructuredCellBuffer(UInt32 nbCells, VTKValue ptValues, VTKValue cellValues, VTKValue cellTypes, IntPtr buffer, VTKValueFormat destFormat = VTKValueFormat.VTK_NO_VALUE_FORMAT)
         {
             unsafe
             {
-                VTKInterop.VTKParser_fillUnstructuredCellBuffer(m_parser, nbCells, ptValues.Value, (Int32*)cellValues.Value, (Int32*)cellTypes.Value, buffer);
+                VTKInterop.VTKParser_fillUnstructuredCellBuffer(m_parser, nbCells, ptValues.Value, (Int32*)cellValues.Value, (Int32*)cellTypes.Value, buffer, destFormat);
             }
         }
 
-        static VTKCellConstruction GetCellConstructionDescriptor(UInt32 nbCells, VTKValue cellValues, VTKValue cellTypes)
+        public static VTKCellConstruction GetCellConstructionDescriptor(UInt32 nbCells, VTKValue cellValues, VTKValue cellTypes)
         {
             unsafe
             { 
@@ -322,23 +344,19 @@ namespace sereno
             }
         }
 
-        static void Main(string[] argv) 
+        public static Int32 GetFormatSize(VTKValueFormat format)
         {
-            VTKParser parser = new VTKParser("A:/Donnees_Mika/Datasets/Agulhas_10/Agulhas_10.vtk");
-
-            if(parser.Parse())
-                Console.WriteLine("File parsed successfully");
-            else
-            { 
-                Console.WriteLine("Error at parsing the file...");
-                return;
+            switch(format)
+            {
+                case VTKValueFormat.VTK_INT:
+                    return 4;
+                case VTKValueFormat.VTK_DOUBLE:
+                    return 8;
+                case VTKValueFormat.VTK_FLOAT:
+                    return 4;
+                default:
+                    return 0;
             }
-            List<VTKFieldValue> fields = parser.GetCellFieldValueDescriptors();
-            foreach(var f in fields)
-                Console.WriteLine("Has retrieved field named " + f.Name);
-            
-            VTKValue val = parser.ParseAllUnstructuredGridPoints();
-            Console.WriteLine("Has retrieved " + val.NbValues.ToString() + " values");
         }
     }
 }

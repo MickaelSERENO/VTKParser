@@ -219,7 +219,17 @@ namespace sereno
               * \return the cells descriptor*/
             VTKCells getUnStructuredGridCellDescriptor() const { return m_unstrGrid.cells; }
 
-            void fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer);
+            /**
+             * \brief  get the rendering unstructured cell buffer
+             *
+             * \param nbCells the number of cells to get
+             * \param ptValues the points values
+             * \param cellValues the cell values
+             * \param cellTypes the cell types
+             * \param buffer the out buffer
+             * \param destFormat the destination format. put VTK_NO_VALUE_TYPE if you want the points values format
+             */
+            void fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer, VTKValueFormat destFormat = VTK_NO_VALUE_FORMAT);
 
             /**
              * \brief Get the cell construction descriptor. It the type needed to render the dataset changed, this function returns before having parsed everything

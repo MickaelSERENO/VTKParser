@@ -533,8 +533,11 @@ namespace sereno
         return con;
     }
 
-    void VTKParser::fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer)
+    void VTKParser::fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer, VTKValueFormat destFormat)
     {
+        if(destFormat == VTK_NO_VALUE_FORMAT)
+            destFormat = m_unstrGrid.ptsPos.format;
+
         uint32_t offset = 0;
         for (uint32_t i = 0; i < nbCells; i++)
         {
@@ -549,21 +552,8 @@ namespace sereno
                 return;
             }
 
-            switch(m_unstrGrid.ptsPos.format)
-            {
-                case VTK_INT:
-                    cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((int*)buffer) + offset);
-                    break;
-                case VTK_FLOAT:
-                    cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((float*)buffer) + offset);
-                    break;
-                case VTK_DOUBLE:
-                    cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, ((double*)buffer) + offset);
-                    break;
-                default:
-                    return;
-            }
-            offset += cell->sizeBuffer(cellValues);
+            cell->fillBuffer(ptValues, m_unstrGrid.ptsPos.format, cellValues, (uint8_t*)buffer + offset, destFormat);
+            offset += cell->sizeBuffer(cellValues)*VTKValueFormatInt(destFormat);
         }
     }
 

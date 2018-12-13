@@ -8,7 +8,7 @@ extern "C"{
     namespace sereno
     {
 #endif
-        typedef void     (*VTKCELL_FILLBUFFER)(void* pts, VTKValueFormat ptsFormat, int32_t* cellPts, void* buffer);
+        typedef void     (*VTKCELL_FILLBUFFER)(void* pts, VTKValueFormat ptsFormat, int32_t* cellPts, void* buffer, VTKValueFormat destFormat);
         typedef uint32_t (*VTKCELL_SIZEBUFFER)(int32_t* cellPts);
         typedef VTKGLMode(*VTKCELL_GETMODE)();
         typedef int32_t  (*VTKCELL_NBPOINTS)();
@@ -21,11 +21,24 @@ extern "C"{
             VTKCELL_NBPOINTS   nbPoints;
         }VTKCellVT;
 
-#define VTK_CELL_FILL_PTS_BUFFER(t) \
-    for(uint32_t i = 0; i < 3; i++) \
-        ((t*)buffer)[i+bufferOffset] = ((t*)pts)[i+ptsOffset];
+#define VTK_CELL_FILL_PTS_BUFFER(t1)                                        \
+    for(uint32_t i = 0; i < 3; i++)                                         \
+        switch(destFormat)                                                  \
+        {                                                                   \
+            case VTK_INT:                                                   \
+                ((int*)buffer)[i+bufferOffset] = ((t1*)pts)[i+ptsOffset];   \
+                break;                                                      \
+            case VTK_FLOAT:                                                 \
+                ((float*)buffer)[i+bufferOffset] = ((t1*)pts)[i+ptsOffset]; \
+                break;                                                      \
+            case VTK_DOUBLE:                                                \
+                ((double*)buffer)[i+bufferOffset] = ((t1*)pts)[i+ptsOffset];\
+                break;                                                      \
+            default:                                                        \
+                break;                                                      \
+        }                                                                   \
 
-        inline void VTKCell_fillPtsBuffer(void* pts, VTKValueFormat ptsFormat, void* buffer, int32_t ptsOffset, int32_t bufferOffset)
+        inline void VTKCell_fillPtsBuffer(void* pts, VTKValueFormat ptsFormat, void* buffer, int32_t ptsOffset, int32_t bufferOffset, VTKValueFormat destFormat)
         {
             switch(ptsFormat)
             {

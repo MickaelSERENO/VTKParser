@@ -164,6 +164,18 @@ namespace sereno
             int32_t* parseAllUnstructuredGridCellTypes() const;
 
             /**
+             * \brief  Get the field names present in the point data
+             * \return  a list of field names 
+             */
+            std::vector<std::string> getPointFieldValueNames() const;
+
+            /**
+             * \brief Get the field data descriptors for point data
+             * \return   a list containing pointer to field data descriptors
+             */
+            std::vector<const VTKFieldValue*> getPointFieldValueDescriptors() const;
+
+            /**
              * \brief  Get the field names present in the cell data
              * \return   a list of field names
              */
@@ -180,7 +192,7 @@ namespace sereno
              *
              * \return a pointer to the field data. Needs to be free (using free). Use fieldData.type to know how to cast this object. Contains nbTuples*nbValuePerTuple*VTKValueFormatInt(format) bytes.
              */
-            void* parseAllCellFieldValues(const VTKFieldValue* fieldData) const;
+            void* parseAllFieldValues(const VTKFieldValue* fieldData) const;
 
             /**
              * \brief  Get the dataset type of this VTK object

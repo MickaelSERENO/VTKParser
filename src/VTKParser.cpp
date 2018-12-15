@@ -548,6 +548,26 @@ namespace sereno
         return (int32_t*)getAllBinaryValues(m_unstrGrid.cellTypes.offset, m_unstrGrid.cellTypes.nbCells, VTK_INT);
     }
 
+    std::vector<std::string> VTKParser::getPointFieldValueNames() const
+    {
+        std::vector<std::string> res;
+        for(auto& it : m_ptsData.values)
+            if(it.type == VTK_FIELD_DATA)
+                for(auto& it2 : it.fieldData.values)
+                    res.push_back(it2.name);
+        return res;
+    }
+
+    std::vector<const VTKFieldValue*> VTKParser::getPointFieldValueDescriptors() const
+    {
+        std::vector<const VTKFieldValue*> res;
+        for(auto& it : m_ptsData.values)
+            if(it.type == VTK_FIELD_DATA)
+                for(auto& it2 : it.fieldData.values)
+                    res.push_back(&it2);
+        return res;
+    }
+
     std::vector<std::string> VTKParser::getCellFieldValueNames() const
     {
         std::vector<std::string> res;
@@ -568,7 +588,7 @@ namespace sereno
         return res;
     }
 
-    void* VTKParser::parseAllCellFieldValues(const VTKFieldValue* fieldData) const
+    void* VTKParser::parseAllFieldValues(const VTKFieldValue* fieldData) const
     {
         return getAllBinaryValues(fieldData->offset, fieldData->nbTuples*fieldData->nbValuePerTuple, fieldData->format);
     }

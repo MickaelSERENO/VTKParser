@@ -43,6 +43,15 @@ namespace sereno
         return parser->getUnstructuredGridCellDescriptor();
     }
 
+    HVTKFieldValue* VTKParser_getPointFieldValueDescriptors(HVTKParser parser, size_t* nb)
+    {
+        std::vector<const VTKFieldValue*> values = parser->getPointFieldValueDescriptors();
+        *nb = values.size();
+        HVTKFieldValue* res = (HVTKFieldValue*)malloc(sizeof(HVTKFieldValue)*(*nb));
+        memcpy(res, values.data(), (*nb)*sizeof(HVTKFieldValue));
+        return res;
+    }
+
     HVTKFieldValue* VTKParser_getCellFieldValueDescriptors(HVTKParser parser, size_t* nb)
     {
         std::vector<const VTKFieldValue*> values = parser->getCellFieldValueDescriptors();
@@ -87,9 +96,9 @@ namespace sereno
         return value->name.c_str();
     }
 
-    void* VTKParser_parseAllCellFieldValues(HVTKParser parser, HVTKFieldValue value)
+    void* VTKParser_parseAllFieldValues(HVTKParser parser, HVTKFieldValue value)
     {
-        return parser->parseAllCellFieldValues(value);
+        return parser->parseAllFieldValues(value);
     }
 
     void VTKParser_free(void* data)

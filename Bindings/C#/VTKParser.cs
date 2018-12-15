@@ -6,6 +6,11 @@ using System.Collections.Generic;
 namespace sereno
 {
     /// <summary>
+    /// Callback function for getting field value descriptor.
+    /// </summary>
+    public unsafe delegate IntPtr* DelGetFieldValueDescriptor(IntPtr parser, UInt32* nb);
+
+    /// <summary>
     /// VTK Value Format enumeration, describes what type the binary value is
     /// </summary>
     public enum VTKValueFormat
@@ -203,6 +208,8 @@ namespace sereno
 
         //Field Value
         [DllImport("serenoVTKParser")]
+        public unsafe extern static IntPtr* VTKParser_getPointFieldValueDescriptors(IntPtr parser, UInt32* n); 
+        [DllImport("serenoVTKParser")]
         public unsafe extern static IntPtr* VTKParser_getCellFieldValueDescriptors(IntPtr parser, UInt32* n); 
         [DllImport("serenoVTKParser")]
         public extern static VTKValueFormat VTKParser_getFieldFormat(IntPtr fieldValue);
@@ -212,6 +219,8 @@ namespace sereno
         public extern static UInt32 VTKParser_getFieldNbValuesPerTuple(IntPtr fieldValue);
         [DllImport("serenoVTKParser")]
         public extern static IntPtr VTKParser_getFieldName(IntPtr fieldValue);
+        [DllImport("serenoVTKParser")]
+        public unsafe extern static IntPtr VTKParser_parseAllFieldValues(IntPtr parser, IntPtr val);
         [DllImport("serenoVTKParser")]
         public extern static void VTKParser_free(IntPtr value);
     }
@@ -266,6 +275,11 @@ namespace sereno
         /// Number of values per tuple
         /// </summary>
         public UInt32 NbValuesPerTuple;
+
+        /// <summary>
+        /// The native ptr.
+        /// </summary>
+        public IntPtr NativePtr;
     }
 
     /// <summary>
@@ -315,7 +329,7 @@ namespace sereno
 		/// <returns>The structured points descriptor.</returns>
 		public VTKStructuredPoints GetStructuredPointsDescriptor()
 		{
-			return Marshal.PtrToStructure<VTKStructuredPoints>(VTKInterop.VTKParser_getStructuredPointsDescriptor(m_parser));
+            return (VTKStructuredPoints)Marshal.PtrToStructure(VTKInterop.VTKParser_getStructuredPointsDescriptor(m_parser), typeof(VTKStructuredPoints));
 		}
 
         /// <summary>
@@ -357,28 +371,40 @@ namespace sereno
         }
 
         /// <summary>
+        /// Get the Field Value descriptors for Points data (data per cell).
+        /// </summary>
+        /// <returns>List of all the Field Value available in this dataset</returns>
+        public unsafe List<VTKFieldValue> GetPointFieldValueDescriptors()
+        {
+            return GetFieldValueDescriptors(VTKInterop.VTKParser_getPointFieldValueDescriptors);
+
+        }
+
+        /// <summary>
         /// Get the Field Value descriptors for Cells data (data per cell).
         /// </summary>
         /// <returns>List of all the Field Value available in this dataset</returns>
         public List<VTKFieldValue> GetCellFieldValueDescriptors()
         {
-            List<VTKFieldValue> list = new List<VTKFieldValue>();
             unsafe
             {
-                UInt32 nbVal;
-                IntPtr* desc = VTKInterop.VTKParser_getCellFieldValueDescriptors(m_parser, &nbVal);
-                for(UInt32 i = 0; i < nbVal; i++)
-                {
-                    VTKFieldValue fieldValue = new VTKFieldValue();
-                    fieldValue.Format           = VTKInterop.VTKParser_getFieldFormat(desc[i]);
-                    fieldValue.NbTuples         = VTKInterop.VTKParser_getFieldNbTuples(desc[i]);
-                    fieldValue.NbValuesPerTuple = VTKInterop.VTKParser_getFieldNbValuesPerTuple(desc[i]); 
-                    fieldValue.Name             = Marshal.PtrToStringAnsi(VTKInterop.VTKParser_getFieldName(desc[i]));
-                    list.Add(fieldValue);
-                }
-                VTKInterop.VTKParser_free((IntPtr)desc);
+                return GetFieldValueDescriptors(VTKInterop.VTKParser_getCellFieldValueDescriptors);
             }
-            return list;
+        }
+
+        /// <summary>
+        /// Get the concrete Value of a Field Value
+        /// </summary>
+        /// <returns>The VTK value.</returns>
+        /// <param name="val">Value.</param>
+        public VTKValue ParseAllFieldValues(VTKFieldValue fieldVal)
+        {
+            VTKValue val = new VTKValue();
+            val.NbValues = fieldVal.NbTuples * fieldVal.NbValuesPerTuple;
+            val.Value    = VTKInterop.VTKParser_parseAllFieldValues(m_parser, fieldVal.NativePtr);
+            val.Format   = fieldVal.Format;
+
+            return val;
         }
 
         /// <summary>
@@ -411,6 +437,33 @@ namespace sereno
             {
                 VTKInterop.VTKParser_fillUnstructuredGridCellBuffer(m_parser, nbCells, ptValues.Value, (Int32*)cellValues.Value, (Int32*)cellTypes.Value, buffer, destFormat);
             }
+        }
+
+        /// <summary>
+        /// Gets the field values descriptor.
+        /// </summary>
+        /// <returns>The field values descriptor.</returns>
+        /// <param name="clbk">The callback delegate function to use.</param>
+        private List<VTKFieldValue> GetFieldValueDescriptors(DelGetFieldValueDescriptor clbk) 
+        {
+            List<VTKFieldValue> list = new List<VTKFieldValue>();
+            unsafe
+            {
+                UInt32 nbVal;
+                IntPtr* desc = clbk(m_parser, &nbVal);
+                for(UInt32 i = 0; i < nbVal; i++)
+                {
+                    VTKFieldValue fieldValue    = new VTKFieldValue();
+                    fieldValue.Format           = VTKInterop.VTKParser_getFieldFormat(desc[i]);
+                    fieldValue.NbTuples         = VTKInterop.VTKParser_getFieldNbTuples(desc[i]);
+                    fieldValue.NbValuesPerTuple = VTKInterop.VTKParser_getFieldNbValuesPerTuple(desc[i]); 
+                    fieldValue.Name             = Marshal.PtrToStringAnsi(VTKInterop.VTKParser_getFieldName(desc[i]));
+                    fieldValue.NativePtr        = desc[i];
+                    list.Add(fieldValue);
+                }
+                VTKInterop.VTKParser_free((IntPtr)desc);
+            }
+            return list;
         }
 
 		/// <summary>

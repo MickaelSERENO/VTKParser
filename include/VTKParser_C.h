@@ -35,6 +35,14 @@ namespace sereno
         DllExport char             VTKParser_parse(HVTKParser parser);
 
         /**
+         * \brief  Get all the point field value descriptor
+         * \param parser the parser containing the information
+         * \param nb[out] the number of value in the created array
+         * \return   an array of HVTKFieldValue. needs to be freed (free(val)). DO NOT FREE POINT VALUES !
+         */
+        DllExport HVTKFieldValue* VTKParser_getPointFieldValueDescriptors(HVTKParser parser, size_t* nb);
+
+        /**
          * \brief  Get all the cell field value descriptor
          * \param parser the parser containing the information
          * \param nb[out] the number of value in the created array
@@ -131,7 +139,7 @@ namespace sereno
          * \param value the field value descriptor to get data from
          * \return   a pointer to the allocated memory containing the information. Use VTKParser_getCellFieldFormat, VTKParser_getCellFieldNbTuples and VTKParser_getCellFieldNbValuesPerTuple function to get this memory size (format*tuple*nbValuePerTuple). The value needs to be freed (using free)
          */
-        DllExport void* VTKParser_parseAllCellFieldValues(HVTKParser parser, HVTKFieldValue value);
+        DllExport void* VTKParser_parseAllFieldValues(HVTKParser parser, HVTKFieldValue value);
 
         /**
          * \brief  Get the cell construction descriptor (hints for allocating the correct buffer)

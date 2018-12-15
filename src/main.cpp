@@ -20,10 +20,14 @@ int main(int argc, char* argv[])
 
     void* data = VTKParser_parseAllUnstructuredGridPoints(parser);
     size_t nbFieldValue = 0;
-    HVTKFieldValue* fieldValues = VTKParser_getCellFieldValueDescriptors(parser, &nbFieldValue);
+    HVTKFieldValue* fieldValues = VTKParser_getPointFieldValueDescriptors(parser, &nbFieldValue);
     std::vector<void*> datas;
-    for(uint32_t i = 0; i < 2; i++)
-        datas.push_back(VTKParser_parseAllCellFieldValues(parser, fieldValues[i]));
+    for(uint32_t i = 0; i < nbFieldValue; i++)
+    {
+        std::cout << "ok\n";
+        std::cout << VTKParser_getFieldName(fieldValues[i]) << std::endl;
+        datas.push_back(VTKParser_parseAllFieldValues(parser, fieldValues[i]));
+    }
 
     if(VTKParser_getDatasetType(parser) == VTK_UNSTRUCTURED_GRID)
     {

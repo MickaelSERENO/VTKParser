@@ -13,9 +13,13 @@ namespace sereno
         VTK_INT = 0,
         VTK_DOUBLE,
         VTK_FLOAT,
+		VTK_UNSIGNED_CHAR,
         VTK_NO_VALUE_FORMAT
     }
 
+	/// <summary>
+	/// The VTK GLMode.
+	/// </summary>
     public enum VTKGLMode
     {
         VTK_GL_TRIANGLES,
@@ -25,10 +29,47 @@ namespace sereno
         VTK_GL_NO_MODE
     }
 
-    /// <summary>
-    /// VTK cell construction structure. It contains meta data about celle construction (buffer size, etc.).
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+	/// <summary>
+	/// VTK Dataset type.
+	/// </summary>
+	public enum VTKDatasetType
+	{
+		VTK_STRUCTURED_GRID,
+		VTK_UNSTRUCTURED_GRID,
+		VTK_STRUCTURED_POINTS,
+		VTK_DATASET_TYPE_NONE
+	}
+
+	/// <summary>
+	/// VTK Structured points.
+	/// </summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VTKStructuredPoints
+	{
+		/// <summary>
+		/// The dimension of the "grid"
+		/// </summary>
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+		public UInt32[] Size;
+
+		/// <summary>
+		/// The spacing between points
+		/// </summary>
+		[MarshalAs(UnmanagedType.ByValArray, ArraySubType=UnmanagedType.R8, SizeConst = 3)]
+		public double[] Spacing;
+
+		/// <summary>
+		/// The origin (offset) of the points
+		/// </summary>
+		[MarshalAs(UnmanagedType.ByValArray, ArraySubType=UnmanagedType.R8, SizeConst = 3)]
+		public double[] Origin;
+	};
+
+
+	/// <summary>
+	/// VTK cell construction structure. It contains meta data about celle construction (buffer size, etc.).
+	/// </summary>
+	[StructLayout(LayoutKind.Sequential)]
     public struct VTKCellConstruction
     {
         /// <summary>
@@ -133,6 +174,13 @@ namespace sereno
         [DllImport("serenoVTKParser")]
         public extern static byte VTKParser_parse(IntPtr parser);
 
+		[DllImport("serenoVTKParser")]
+		public extern static VTKDatasetType VTKParser_getDatasetType(IntPtr parser);
+
+		//Structured points
+		[DllImport("serenoVTKParser")]
+		public unsafe extern static IntPtr VTKParser_getStructuredPointsDescriptor(IntPtr parser);
+
         //Unstructured grid
         [DllImport("serenoVTKParser")]
         public extern static VTKPointPositions VTKParser_getUnstructuredGridPointDescriptor(IntPtr parser);
@@ -149,7 +197,9 @@ namespace sereno
         [DllImport("serenoVTKParser")]
         public unsafe extern static VTKCellConstruction VTKParser_getCellConstructionDescriptor(UInt32 nbCells, Int32* cellValues, Int32* cellTypes);
         [DllImport("serenoVTKParser")]
-        public unsafe extern static void VTKParser_fillUnstructuredCellBuffer(IntPtr parser, UInt32 nbCells, IntPtr ptValues, Int32* cellValues, Int32* cellTypes, IntPtr buffer, VTKValueFormat destFormat);
+        public unsafe extern static void VTKParser_fillUnstructuredGridCellBuffer(IntPtr parser, UInt32 nbCells, IntPtr ptValues, Int32* cellValues, Int32* cellTypes, IntPtr buffer, VTKValueFormat destFormat);
+		[DllImport("serenoVTKParser")]
+		public unsafe extern static void VTKParser_fillUnstructuredGridCellElementBuffer(IntPtr parser, UInt32 nbCells, Int32* cellValues, Int32* cellTypes, Int32* buffer);
 
         //Field Value
         [DllImport("serenoVTKParser")]
@@ -250,6 +300,24 @@ namespace sereno
             return VTKInterop.VTKParser_parse(m_parser) != 0;
         }
 
+		/// <summary>
+		/// Gets the type of the dataset.
+		/// </summary>
+		/// <returns>The dataset type.</returns>
+		public VTKDatasetType GetDatasetType()
+		{
+			return VTKInterop.VTKParser_getDatasetType(m_parser);
+		}
+
+		/// <summary>
+		/// Gets the structured points descriptor.
+		/// </summary>
+		/// <returns>The structured points descriptor.</returns>
+		public VTKStructuredPoints GetStructuredPointsDescriptor()
+		{
+			return Marshal.PtrToStructure<VTKStructuredPoints>(VTKInterop.VTKParser_getStructuredPointsDescriptor(m_parser));
+		}
+
         /// <summary>
         /// Get the values of Cell composition for unstructured grid. Use TODO for getting triangle composition of these cells
         /// </summary>
@@ -270,7 +338,7 @@ namespace sereno
 
         /// <summary>
         /// Get the values of Cell Types for understanding how to merge the points described in ParseAllUnstructuredGridCellsComposition. 
-        /// Use FillUnstructuredCellBuffer for getting triangle composition of these cells 
+        /// Use FillUnstructuredGridCellBuffer for getting triangle composition of these cells 
         /// </summary>
         /// <returns>A VTKValue of all the cell types of this dataset. Format : VTK_INT</returns>
         public VTKValue ParseAllUnstructuredGridCellTypesDescriptor()
@@ -315,7 +383,7 @@ namespace sereno
 
         /// <summary>
         /// Parse all the Unstructured Grid Points available in this dataset.   
-        /// Use FillUnstructuredCellBuffer for getting triangle composition of these cells 
+        /// Use FillUnstructuredGridCellBuffer for getting triangle composition of these cells 
         /// </summary>
         /// <returns>A VTKValue of these points.</returns>
         public VTKValue ParseAllUnstructuredGridPoints()
@@ -328,14 +396,30 @@ namespace sereno
             return val;
         }
 
-		public unsafe void FillUnstructuredCellBuffer(UInt32 nbCells, VTKValue ptValues, VTKValue cellValues, VTKValue cellTypes, IntPtr buffer, VTKValueFormat destFormat = VTKValueFormat.VTK_NO_VALUE_FORMAT)
+		/// <summary>
+		/// Fills the unstructured grid cell buffer.
+		/// </summary>
+		/// <param name="nbCells">Nb cells.</param>
+		/// <param name="ptValues">Point values.</param>
+		/// <param name="cellValues">Cell values.</param>
+		/// <param name="cellTypes">Cell types.</param>
+		/// <param name="buffer">Buffer.</param>
+		/// <param name="destFormat">Destination format.</param>
+		public unsafe void FillUnstructuredGridCellBuffer(UInt32 nbCells, VTKValue ptValues, VTKValue cellValues, VTKValue cellTypes, IntPtr buffer, VTKValueFormat destFormat = VTKValueFormat.VTK_NO_VALUE_FORMAT)
         {
             unsafe
             {
-                VTKInterop.VTKParser_fillUnstructuredCellBuffer(m_parser, nbCells, ptValues.Value, (Int32*)cellValues.Value, (Int32*)cellTypes.Value, buffer, destFormat);
+                VTKInterop.VTKParser_fillUnstructuredGridCellBuffer(m_parser, nbCells, ptValues.Value, (Int32*)cellValues.Value, (Int32*)cellTypes.Value, buffer, destFormat);
             }
         }
 
+		/// <summary>
+		/// Gets the cell construction descriptor.
+		/// </summary>
+		/// <returns>The cell construction descriptor.</returns>
+		/// <param name="nbCells">Nb cells.</param>
+		/// <param name="cellValues">Cell values.</param>
+		/// <param name="cellTypes">Cell types.</param>
         public static VTKCellConstruction GetCellConstructionDescriptor(UInt32 nbCells, VTKValue cellValues, VTKValue cellTypes)
         {
             unsafe
@@ -344,6 +428,11 @@ namespace sereno
             }
         }
 
+		/// <summary>
+		/// Gets the size of the format.
+		/// </summary>
+		/// <returns>The format size.</returns>
+		/// <param name="format">Format.</param>
         public static Int32 GetFormatSize(VTKValueFormat format)
         {
             switch(format)
@@ -354,6 +443,8 @@ namespace sereno
                     return 8;
                 case VTKValueFormat.VTK_FLOAT:
                     return 4;
+				case VTKValueFormat.VTK_UNSIGNED_CHAR:
+					return 1;
                 default:
                     return 0;
             }

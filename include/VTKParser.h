@@ -123,21 +123,6 @@ namespace sereno
         std::vector<VTKValue> values; /*!< Associated values*/
     };
 
-    /* \brief VTK Grid structure */
-    struct VTKGrid
-    {
-        uint32_t          size[3];   /*!< The size of the grid*/
-        VTKPointPositions ptsPos;    /*!< The point position*/
-    };
-
-    /* \brief VTK Unstructured Grid */
-    struct VTKUnstructuredGrid
-    {
-        VTKPointPositions ptsPos;    /*!< The point position*/
-        VTKCells          cells;     /*!< The cells*/
-        VTKCellTypes      cellTypes; /*!< The cell type values*/
-    };
-
     /* \brief VTKParser class. Only support right now STRUCTURED_GRID and BINARY */
     struct DllExport VTKParser
     {
@@ -204,6 +189,12 @@ namespace sereno
             VTKDatasetType getDatasetType() const {return m_type;}
 
             /**
+             * \brief  Get the structured points descriptor
+             * \return   a pointer to the structured points descriptor
+             */
+            const VTKStructuredPoints& getStructuredPointsDescriptor() const {return m_strPoints;}
+
+            /**
              * \brief  Get the dataset unstructured grid point descriptor
              * \return the point descriptor
              */
@@ -212,12 +203,12 @@ namespace sereno
             /**
               * \brief Get the dataset unstructured grid cell type descriptor
               * \return the cell type descriptor*/
-            VTKCellTypes getUnStructuredGridCellTypesDescriptor() const { return m_unstrGrid.cellTypes; }
+            VTKCellTypes getUnstructuredGridCellTypesDescriptor() const { return m_unstrGrid.cellTypes; }
 
             /**
               * \brief Get the dataset unstructured grid cell type descriptor
               * \return the cells descriptor*/
-            VTKCells getUnStructuredGridCellDescriptor() const { return m_unstrGrid.cells; }
+            VTKCells getUnstructuredGridCellDescriptor() const { return m_unstrGrid.cells; }
 
             /**
              * \brief  get the rendering unstructured cell buffer
@@ -229,7 +220,15 @@ namespace sereno
              * \param buffer the out buffer
              * \param destFormat the destination format. put VTK_NO_VALUE_TYPE if you want the points values format
              */
-            void fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer, VTKValueFormat destFormat = VTK_NO_VALUE_FORMAT);
+            void fillUnstructuredGridCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer, VTKValueFormat destFormat = VTK_NO_VALUE_FORMAT);
+
+            /**
+             * \brief Fill the unstructured grid cell element buffer 
+             * \param nbCells the number of cells to use
+             * \param cellValues the cell Values
+             * \param cellTypes the cell Types
+             * \param buffer the buffer to fill*/
+            void fillUnstructuredGridCellElementBuffer(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes, int32_t* buffer);
 
             /**
              * \brief Get the cell construction descriptor. It the type needed to render the dataset changed, this function returns before having parsed everything
@@ -249,10 +248,15 @@ namespace sereno
              * \return false on error, true on success */
             bool parseUnstructuredGrid(FILE* file);
 
-            /* \brief Parse the structured part of the file
+            /* \brief Parse the structured grid part of the file
              * \param file the file to read
              * \return false on error, true on success */
             bool parseStructuredGrid(FILE* file);
+
+            /* \brief Parse the structured points part of the file
+             * \param file the file to read
+             * \return false on error, true on success */
+            bool parseStructuredPoints(FILE* file);
 
             /**
              * \brief  Parse values (points / cells values)
@@ -296,6 +300,7 @@ namespace sereno
             VTKDatasetType m_type;                 /*!< The dataset type*/
             union
             {
+                VTKStructuredPoints m_strPoints;   /*!< Structured Point*/
                 VTKGrid             m_grid;        /*!< Grid dataset*/
                 VTKUnstructuredGrid m_unstrGrid;   /*!< Unstructured grid dataset*/
             };
@@ -323,6 +328,9 @@ namespace sereno
             static const std::regex pointsRegex;       /*!< Regex checking the POINTS     (unstructured grid)*/
             static const std::regex cellsRegex;        /*!< Regex checking the CELLS      (unstructured grid)*/
             static const std::regex cellTypesRegex;    /*!< Regex checking the CELL_TYPES (unstructured grid)*/
+            static const std::regex dimensionsRegex;   /*!< Regex checking the DIMENSIONS (structured points)*/
+            static const std::regex spacingRegex;      /*!< Regex checking the SPACING    (structured points)*/
+            static const std::regex originRegex;       /*!< Regex checking the ORIGIN     (structured points)*/
             static const std::regex pointDataRegex;    /*!< Regex checking the POINT_DATA */
             static const std::regex cellDataRegex;     /*!< Regex checking the CELL_DATA */
             static const std::regex informationRegex;  /*!< Regex checking the INFORMATION (METADATA)*/

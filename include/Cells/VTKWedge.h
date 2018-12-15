@@ -9,6 +9,7 @@ extern "C"{
     {
 #endif
         DllExport void      VTKWedge_fillBuffer(void* pts, VTKValueFormat ptsFormat, int32_t* cellPts, void* buffer, VTKValueFormat destFormat);
+        DllExport void VTKWedge_fillElementBuffer(int32_t* cellPts, int32_t* buffer);
         DllExport uint32_t  VTKWedge_sizeBuffer(int32_t* cellPts);
         DllExport VTKGLMode VTKWedge_getMode();
         DllExport int32_t   VTKWedge_nbPoints();

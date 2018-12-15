@@ -4,9 +4,12 @@
 namespace sereno
 {
     const std::regex VTKParser::versionRegex("^# vtk DataFile Version (\\d+)\\.(\\d+)\\s*");
-    const std::regex VTKParser::datasetRegex("^DATASET (UNSTRUCTURED_GRID|STRUCTURED_GRID)\\s*");
+    const std::regex VTKParser::datasetRegex("^DATASET (UNSTRUCTURED_GRID|STRUCTURED_GRID|STRUCTURED_POINTS)\\s*");
     const std::regex VTKParser::pointsRegex("^POINTS (\\d+) (\\w+)\\s*");
     const std::regex VTKParser::cellsRegex("^CELLS (\\d+) (\\d+)\\s*");
+    const std::regex VTKParser::dimensionsRegex("^DIMENSIONS (\\d+) (\\d+) (\\d+)\\s*");
+    const std::regex VTKParser::spacingRegex("^SPACING ([+-]?\\d*.?\\d+) ([+-]?\\d*.?\\d+) ([+-]?\\d*.?\\d+)\\s*");
+    const std::regex VTKParser::originRegex("^ORIGIN ([+-]?\\d*.?\\d+) ([+-]?\\d*.?\\d+) ([+-]?\\d*.?\\d+)\\s*");
     const std::regex VTKParser::pointDataRegex("^POINT_DATA (\\d+)\\s*");
     const std::regex VTKParser::cellDataRegex("^CELL_DATA (\\d+)\\s*");
     const std::regex VTKParser::informationRegex("^INFORMATION (\\d+)\\s*");
@@ -40,6 +43,8 @@ namespace sereno
             return VTK_FLOAT;
         else if(str == "double")
             return VTK_DOUBLE;
+        else if(str == "unsigned_char")
+            return VTK_UNSIGNED_CHAR;
         return VTK_NO_VALUE_FORMAT;
     }
 
@@ -135,6 +140,23 @@ namespace sereno
         }\
     }
 
+
+#define VTK_STRINGIFY(a) #a
+
+#pragma GCC diagnostic ignored "-Wshadow"
+#define VTK_PARSE_METADATA(_file)        \
+    {\
+        size_t _off = ftell(file);       \
+        GET_VTK_NEXT_LINE(_file)         \
+        if(line == "METADATA\n")         \
+        {                                \
+            if(!parseMetadata(_file))    \
+                return false;            \
+        }                                \
+        else                             \
+            fseek(_file, _off, SEEK_SET);\
+    }\
+
     bool VTKParser::parse()
     {
 #ifdef WIN32
@@ -199,7 +221,17 @@ namespace sereno
                     goto error;
             }
             else if(match[1].str() == "STRUCTURED_GRID")
-                m_type = VTK_STRUCTURED_GRID;              
+            {
+                m_type = VTK_STRUCTURED_GRID;
+                if(!parseStructuredGrid(f))
+                    goto error;
+            }
+            else if(match[1].str() == "STRUCTURED_POINTS")
+            {
+                m_type = VTK_STRUCTURED_POINTS;
+                if(!parseStructuredPoints(f))
+                    goto error;
+            }
             else
             {
                 std::cerr << "Unexpecting vtk dataset structure... Received : " << match[1].str() << "\n";
@@ -253,39 +285,43 @@ namespace sereno
 
     bool VTKParser::parseUnstructuredGrid(FILE* file)
     {
+        bool parsedPoints    = false;
+        bool parsedCells     = false;
+        bool parsedCellTypes = false;
+
         std::string line;
-        GET_VTK_NEXT_LINE(file)
-        std::smatch pointMatch;
-        if(std::regex_match(line, pointMatch, pointsRegex))
+        std::smatch match;
+
+        try
         {
-            try
+            for(uint32_t i = 0; i < 3; i++)
             {
-                //Parsing points 
-                m_unstrGrid.ptsPos.nbPoints = std::stoi(pointMatch[1].str());
-                m_unstrGrid.ptsPos.format   = vtkStringToFormat(pointMatch[2].str());
-                m_unstrGrid.ptsPos.offset   = ftell(file);
-                fseek(file, 3*m_unstrGrid.ptsPos.nbPoints*VTKValueFormatInt(m_unstrGrid.ptsPos.format), SEEK_CUR);
-
                 GET_VTK_NEXT_LINE(file)
-                if(line != "\n")
+                if(!parsedPoints && std::regex_match(line, match, pointsRegex))
                 {
-                    std::cerr << line << "Unexpected token\n";
-                    return false;
-                }
+                    parsedPoints = true;
 
-                //Parsing points metadata
-                GET_VTK_NEXT_LINE(file)
-                std::smatch match;
-                if(line == "METADATA\n")
-                {
-                    if(!parseMetadata(file))
-                        return false;
+                    //Parsing points 
+                    m_unstrGrid.ptsPos.nbPoints = std::stoi(match[1].str());
+                    m_unstrGrid.ptsPos.format   = vtkStringToFormat(match[2].str());
+                    m_unstrGrid.ptsPos.offset   = ftell(file);
+                    fseek(file, 3*m_unstrGrid.ptsPos.nbPoints*VTKValueFormatInt(m_unstrGrid.ptsPos.format), SEEK_CUR);
+
                     GET_VTK_NEXT_LINE(file)
+                    if(line != "\n")
+                    {
+                        std::cerr << line << "Unexpected token\n";
+                        return false;
+                    }
+
+                    //Parsing points metadata
+                    VTK_PARSE_METADATA(file)
                 }
 
                 //Parsing cells
-                if(std::regex_match(line, match, cellsRegex))
+                else if(!parsedCells && std::regex_match(line, match, cellsRegex))
                 {
+                    parsedCells = true;
                     m_unstrGrid.cells.nbCells   = std::stoi(match[1].str());
                     m_unstrGrid.cells.wholeSize = std::stoi(match[2].str());
                     m_unstrGrid.cells.offset    = ftell(file);
@@ -296,22 +332,13 @@ namespace sereno
                         std::cerr << "Unexpected token\n";
                         return false;
                     }
-                    GET_VTK_NEXT_LINE(file)
-                    if(line == "METADATA\n")
-                    {
-                        if(!parseMetadata(file))
-                            return false;
-                        GET_VTK_NEXT_LINE(file)
-                    }
-                }
-                else
-                {
-                    std::cerr << "Expecting CELLS token\n";
-                    return false;
-                }
 
-                if(std::regex_match(line, match, cellTypesRegex))
+                    VTK_PARSE_METADATA(file)
+                }
+                else if(!parsedCellTypes && std::regex_match(line, match, cellTypesRegex))
                 {
+                    parsedCellTypes = true;
+
                     m_unstrGrid.cellTypes.offset  = ftell(file);
                     m_unstrGrid.cellTypes.nbCells = std::stoi(match[1].str());
                     fseek(file, m_unstrGrid.cellTypes.nbCells*sizeof(int), SEEK_CUR);
@@ -321,25 +348,84 @@ namespace sereno
                         std::cerr << "Unexpecting token.\n";
                         return false;
                     }
+                    VTK_PARSE_METADATA(file)
                 }
                 else
                 {
-                    std::cerr << "Expecting CELL_TYPES token\n";
+                    std::cerr << "Expecting a valid unstructured grid token\n";
                     return false;
                 }
             }
-            catch(const std::exception& e)
-            {
-                std::cerr << "Error at dataset block : " << e.what() << std::endl;
-                return false;
-            }
         }
-        else
+        catch(const std::exception& e)
         {
-            std::cerr << "Expecting POINTS token\n";
+            std::cerr << "Error at dataset block : " << e.what() << std::endl;
             return false;
         }
         return true;
+    }
+
+    bool VTKParser::parseStructuredPoints(FILE* file)
+    {
+        bool parsedDimensions = false;
+        bool parsedSpacing    = false;
+        bool parsedOrigin     = false;
+
+        std::smatch match;
+        std::string line;
+
+        std::setlocale(LC_ALL, "C");
+
+        try
+        {
+            for(uint32_t i = 0; i < 3; i++) //Parse three information
+            {
+                GET_VTK_NEXT_LINE(file)
+                if(!parsedDimensions && std::regex_match(line, match, dimensionsRegex))
+                {
+                    parsedDimensions = true;
+                    for(uint32_t j = 0; j < 3; j++)
+                        m_strPoints.size[j] = std::stoi(match[j+1].str());
+                    VTK_PARSE_METADATA(file)
+                }
+
+                else if(!parsedSpacing && std::regex_match(line, match, spacingRegex))
+                {
+                    parsedSpacing = true;
+                    for(uint32_t j = 0; j < 3; j++)
+                        m_strPoints.spacing[j] = std::stod(match[j+1].str());
+                    VTK_PARSE_METADATA(file)
+                }
+
+                else if(!parsedOrigin && std::regex_match(line, match, originRegex))
+                {
+                    parsedOrigin = true;
+                    for(uint32_t j = 0; j < 3; j++)
+                    {
+                        m_strPoints.origin[j] = std::stod(match[j+1].str());
+                        std::cerr << std::stod(match[j+1].str()) << "\n";
+                    }
+                    VTK_PARSE_METADATA(file)
+                }
+                else
+                {
+                    std::cerr << "Expecting a valid structured points token\n";
+                    return false;
+                }
+            }
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << "Error while parsing structured points : " << e.what() << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool VTKParser::parseStructuredGrid(FILE* file)
+    {
+        return false;
     }
 
     bool VTKParser::parseMetadata(FILE* file)
@@ -422,8 +508,6 @@ namespace sereno
                             parseMetadata(file);
                         else
                             fseek(file, filePos, SEEK_SET);
-
-                        std::cerr << "Found : " << fieldValue.name << std::endl;
                     }
                     data.values.push_back(value);
                 }
@@ -492,11 +576,11 @@ namespace sereno
     VTKCellConstruction VTKParser::getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes)
     {
         VTKCellConstruction con;
-        con.mode   = VTK_GL_NO_MODE;
-        con.error  = 0;
-        con.size   = 0;
-        con.nbCell = 0;
-        con.next   = 0;
+        con.mode    = VTK_GL_NO_MODE;
+        con.error   = 0;
+        con.size    = 0;
+        con.nbCells = 0;
+        con.next    = 0;
 
         for(uint32_t i = 0; i < nbCells; i++)
         {
@@ -515,16 +599,17 @@ namespace sereno
             //Check type
             if(con.mode != VTK_GL_NO_MODE && con.mode != cell->getMode())
                 return con;
+            con.mode = cell->getMode();
 
             //Check nbPoints (error)
-            if (cell->nbPoints() > 0 && cellValues[i] != cell->nbPoints())
+            if (cell->nbPoints() > 0 && cellValues[0] != cell->nbPoints())
                 goto error;
 
             //add size, next and nbCell
-            con.size   += cell->sizeBuffer(cellValues);
-            con.next   += cellValues[0] + 1;
-            con.nbCell += cellValues[0];
-            cellValues += cellValues[0] + 1;
+            con.size    += cell->sizeBuffer(cellValues);
+            con.next    += cellValues[0] + 1;
+            con.nbCells++;
+            cellValues  += cellValues[0] + 1;
         }
 
         return con;
@@ -533,7 +618,7 @@ namespace sereno
         return con;
     }
 
-    void VTKParser::fillUnstructuredCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer, VTKValueFormat destFormat)
+    void VTKParser::fillUnstructuredGridCellBuffer(uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer, VTKValueFormat destFormat)
     {
         if(destFormat == VTK_NO_VALUE_FORMAT)
             destFormat = m_unstrGrid.ptsPos.format;
@@ -592,6 +677,9 @@ namespace sereno
                 case VTK_DOUBLE:
                     val.d = readDouble(buffer);
                     break;
+                case VTK_UNSIGNED_CHAR:
+                    val.c = buffer[0];
+                    break;
                 default:
                     free(data);
                     return NULL;
@@ -603,6 +691,27 @@ namespace sereno
 #endif
         }
         return (void*)data;
+    }
+
+    void VTKParser::fillUnstructuredGridCellElementBuffer(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes, int32_t* buffer)
+    {
+        uint32_t offset = 0;
+        for (uint32_t i = 0; i < nbCells; i++)
+        {
+            //Determine which VTKCell to use
+            const VTKCellVT* cell = NULL;
+            switch (cellTypes[i])
+            {
+                case VTK_CELL_WEDGE:
+                    cell = &vtkWedge;
+                    break;
+                default:
+                    return;
+            }
+
+            cell->fillElementBuffer(cellValues, buffer + offset);
+            offset += cell->sizeBuffer(cellValues);
+        }
     }
     
 /*----------------------------------------------------------------------------*/

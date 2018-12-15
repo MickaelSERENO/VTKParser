@@ -47,7 +47,14 @@ namespace sereno
          * \param parser the parser containing the information
          * \return   the dataset type
          */
-        DllExport enum VTKDatasetType VTKParser_getDatasetFormat(HVTKParser parser);
+        DllExport enum VTKDatasetType VTKParser_getDatasetType(HVTKParser parser);
+
+        /**
+         * \brief  Get the StructuredPoints descriptor
+         * \param parser the parser containing the information
+         * \return   
+         */
+        DllExport const VTKStructuredPoints* VTKParser_getStructuredPointsDescriptor(HVTKParser parser);
 
         /**
          * \brief  Get the dataset unstructured grid point descriptor
@@ -126,8 +133,37 @@ namespace sereno
          */
         DllExport void* VTKParser_parseAllCellFieldValues(HVTKParser parser, HVTKFieldValue value);
 
+        /**
+         * \brief  Get the cell construction descriptor (hints for allocating the correct buffer)
+         * This is useful for fillUnstructuredGridCellBuffer function
+         * \param nbCells The number of cells to investigate
+         * \param cellValues The cell values array
+         * \param cellTypes the cell types array
+         * \return   the VTKCellConstruction corresponding the these cells
+         */
         DllExport VTKCellConstruction VTKParser_getCellConstructionDescriptor(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes);
-        DllExport void VTKParser_fillUnstructuredCellBuffer(HVTKParser parser, uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer, VTKValueFormat destFormat);
+
+        /**
+         * \brief  Fill the buffer of the VTKCells graphical information (triangles, lines, etc.)
+         * \param parser The parser containing the information
+         * \param nbCells The number of cells to use
+         * \param ptValues The points values
+         * \param cellValues the cell Values
+         * \param cellTypes the cell Types
+         * \param buffer the buffer to fill
+         * \param destFormat the destination format for the buffer
+         */
+        DllExport void VTKParser_fillUnstructuredGridCellBuffer(HVTKParser parser, uint32_t nbCells, void* ptValues, int32_t* cellValues, int32_t* cellTypes, void* buffer, VTKValueFormat destFormat);
+
+        /**
+         * \brief Fill the unstructured grid cell element buffer 
+         * \param parser the parser containing the information
+         * \param nbCells the number of cells to use
+         * \param cellValues the cell Values
+         * \param cellTypes the cell Types
+         * \param buffer the buffer to fill
+         */
+        DllExport void VTKParser_fillUnstructuredGridCellElementBuffer(HVTKParser parser, uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes, int32_t* buffer);
 
         /**
          * \brief  Free function calling "free"

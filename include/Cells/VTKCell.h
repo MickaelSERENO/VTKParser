@@ -8,17 +8,52 @@ extern "C"{
     namespace sereno
     {
 #endif
+        /**
+         * \brief  Fill the vertex buffer "buffer"
+         *
+         * \param pts the points data
+         * \param ptsFormat the format of the points data
+         * \param cellPts the cells data (numberOfPoints, indiceOfPoints1, etc.)
+         * \param buffer the buffer to write
+         * \param destFormat the format of the destination buffer
+         */
         typedef void     (*VTKCELL_FILLBUFFER)(void* pts, VTKValueFormat ptsFormat, int32_t* cellPts, void* buffer, VTKValueFormat destFormat);
+
+        /**
+         * \brief  Fill the element buffer (indices of points)
+         *
+         * \param cellPts the cell point values
+         * \param buffer the buffer to write
+         */
+        typedef void     (*VTKCELL_FILLELEMENTBUFFER)(int32_t* cellPts, int32_t* buffer);
+
+        /**
+         * \brief  Get the size of the buffer needed for this cell (regardless of number of components per points)
+         * \param cellPts the cell points values
+         * \return   the size of the buffer (regardless the number of components per points and the value format needed)
+         */
         typedef uint32_t (*VTKCELL_SIZEBUFFER)(int32_t* cellPts);
+
+        /**
+         * \brief  Get the OpenGL mode for this Cell
+         * \return  The OpenGL rendering mode 
+         */
         typedef VTKGLMode(*VTKCELL_GETMODE)();
+
+        /**
+         * \brief  Get the number of points needed for defining this cell
+         * \return  The number of points 
+         */
         typedef int32_t  (*VTKCELL_NBPOINTS)();
 
+        /** \brief  VTK Cell virtual table. Each parameter is a function pointer to a service on the cell*/
         typedef struct VTKCellVT_
         {
-            VTKCELL_FILLBUFFER fillBuffer;
-            VTKCELL_SIZEBUFFER sizeBuffer;
-            VTKCELL_GETMODE    getMode;
-            VTKCELL_NBPOINTS   nbPoints;
+            VTKCELL_FILLBUFFER        fillBuffer;        /*!< Fill the vertex buffer*/
+            VTKCELL_FILLELEMENTBUFFER fillElementBuffer; /*!< Fill the element buffer (ID of the points)*/
+            VTKCELL_SIZEBUFFER        sizeBuffer;        /*!< Get the size of the buffer */
+            VTKCELL_GETMODE           getMode;           /*!< Get the rendering mode of this cell*/
+            VTKCELL_NBPOINTS          nbPoints;          /*!< Get the number of points per cell. -1 if no limits*/
         }VTKCellVT;
 
 #define VTK_CELL_FILL_PTS_BUFFER(t1)                                        \

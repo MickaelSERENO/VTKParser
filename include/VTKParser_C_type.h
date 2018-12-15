@@ -49,6 +49,7 @@ extern "C" {
     _(VTK_INT            , = 0, 4) \
     _(VTK_DOUBLE         ,    , 8) \
     _(VTK_FLOAT          ,    , 4) \
+    _(VTK_UNSIGNED_CHAR  ,    , 1) \
     _(VTK_NO_VALUE_FORMAT,    , 0)
 
         VTK_DEFINE_ENUM(VTKValueFormat, ENUM_VTK_VALUE_FORMAT)
@@ -97,6 +98,7 @@ extern "C" {
         {
             VTK_STRUCTURED_GRID,
             VTK_UNSTRUCTURED_GRID,
+            VTK_STRUCTURED_POINTS,
             VTK_DATASET_TYPE_NONE
         };
 
@@ -119,6 +121,7 @@ extern "C" {
             size_t         offset;   /*!< Offset in the file (memory mapping !)*/
         };
 
+        /* \brief VTKCells descriptor */
         struct VTKCells
         {
             uint32_t nbCells;    /*!< The number of cells*/
@@ -136,12 +139,36 @@ extern "C" {
         /** \brief The VTKCellConstruction information*/
         struct VTKCellConstruction
         {
-            uint32_t  size;   /*!< The size of the buffer*/
-            VTKGLMode mode;   /*!< The rendering mode (corresponds to OpenGL mode)*/
-            uint32_t  nbCell; /*!< The number of cell parsed*/
-            uint32_t  next;   /*!< Tells the offset to apply for advancing in the cells array*/
-            char      error;  /*!< Tells if an error occured (0 == false, 1 == true)*/
+            uint32_t  size;    /*!< The size of the buffer*/
+            VTKGLMode mode;    /*!< The rendering mode (corresponds to OpenGL mode)*/
+            uint32_t  nbCells; /*!< The number of cell parsed*/
+            uint32_t  next;    /*!< Tells the offset to apply for advancing in the cells array*/
+            char      error;   /*!< Tells if an error occured (0 == false, 1 == true)*/
         };
+
+        /* \brief VTK Grid structure */
+        struct VTKGrid
+        {
+            uint32_t          size[3];   /*!< The size of the grid*/
+            VTKPointPositions ptsPos;    /*!< The point position*/
+        };
+
+        /* \brief VTK Unstructured Grid */
+        struct VTKUnstructuredGrid
+        {
+            VTKPointPositions ptsPos;    /*!< The point position*/
+            VTKCells          cells;     /*!< The cells*/
+            VTKCellTypes      cellTypes; /*!< The cell type values*/
+        };
+
+        /** \brief  VTK Structured Point */
+        struct VTKStructuredPoints
+        {
+            uint32_t size[3];    /*!< The dimension of the "grid"*/
+            double   spacing[3]; /*!< The spacing between points*/
+            double   origin[3];  /*!< The origin (offset) of the points*/
+        };
+
 #ifdef __cplusplus
     }
 }

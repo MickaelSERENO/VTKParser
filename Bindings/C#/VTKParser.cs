@@ -19,6 +19,7 @@ namespace sereno
         VTK_DOUBLE,
         VTK_FLOAT,
 		VTK_UNSIGNED_CHAR,
+        VTK_CHAR,
         VTK_NO_VALUE_FORMAT
     }
 
@@ -497,6 +498,7 @@ namespace sereno
                 case VTKValueFormat.VTK_FLOAT:
                     return 4;
 				case VTKValueFormat.VTK_UNSIGNED_CHAR:
+                case VTKValueFormat.VTK_CHAR:
 					return 1;
                 default:
                     return 0;

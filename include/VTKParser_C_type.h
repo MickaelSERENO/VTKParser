@@ -50,6 +50,7 @@ extern "C" {
     _(VTK_DOUBLE         ,    , 8) \
     _(VTK_FLOAT          ,    , 4) \
     _(VTK_UNSIGNED_CHAR  ,    , 1) \
+    _(VTK_CHAR           ,    , 1) \
     _(VTK_NO_VALUE_FORMAT,    , 0)
 
         VTK_DEFINE_ENUM(VTKValueFormat, ENUM_VTK_VALUE_FORMAT)

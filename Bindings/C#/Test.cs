@@ -1,5 +1,6 @@
 using sereno;
 using System;
+using System.Collections.Generic;
 
 public class Test
 {
@@ -30,6 +31,17 @@ public class Test
             Console.WriteLine($"Structured points : dimensions {pts.Size[0]}, {pts.Size[1]}, {pts.Size[2]}");
             Console.WriteLine($"Structured points : spacing    {pts.Spacing[0]:F4}, {pts.Spacing[1]:F4}, {pts.Spacing[2]:F4}");
             Console.WriteLine($"Structured points : origin     {pts.Origin[0]:F4},  {pts.Origin[1]:F4},  {pts.Origin[2]:F4}");
+
+            List<VTKFieldValue> fieldDesc = parser.GetPointFieldValueDescriptors();
+            if(fieldDesc.Count > 0)
+            {
+                foreach(var f in fieldDesc)
+                    Console.WriteLine($"Found {f.Name} with {f.NbTuples} values");
+            }
+            else
+            {
+                Console.WriteLine("No value found...");
+            }
 
             return;
         }

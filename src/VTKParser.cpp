@@ -45,6 +45,8 @@ namespace sereno
             return VTK_DOUBLE;
         else if(str == "unsigned_char")
             return VTK_UNSIGNED_CHAR;
+        else if(str == "char")
+            return VTK_CHAR;
         return VTK_NO_VALUE_FORMAT;
     }
 
@@ -146,8 +148,8 @@ namespace sereno
 #pragma GCC diagnostic ignored "-Wshadow"
 #define VTK_PARSE_METADATA(_file)        \
     {\
-        size_t _off = ftell(file);       \
-        GET_VTK_NEXT_LINE(_file)         \
+        size_t _off = ftell(_file);      \
+        line = getLineFromFile(_file);   \
         if(line == "METADATA\n")         \
         {                                \
             if(!parseMetadata(_file))    \
@@ -168,8 +170,10 @@ namespace sereno
 #endif
         fseek(f, 0, SEEK_SET);
 
+        bool hasParsedPointData = false;
+        bool hasParsedCellData  = false;
+
         std::smatch match;
-        bool pointCellDataParsed = false; //Tells if we parsed something in the Point / Cell data sections. If not, error
 
         //Version
         std::string line = getLineFromFile(f);
@@ -244,32 +248,39 @@ namespace sereno
             goto error;
         }
 
-        //Check end of file
-        line = getLineFromFile(f);
-        if(line.size() == 0)
-            return true;
-
-        //Parse point data if exist
-        if(std::regex_match(line, match, pointDataRegex))
+        for(uint32_t i = 0; i < 2; i++)
         {
-            pointCellDataParsed = true;
-            parseValues(f, m_ptsData);
+            //Check end of file
+            line = getLineFromFile(f);
+            if(line.size() == 0)
+                goto success;
+
+            //Parse point data if exist
+            if(std::regex_match(line, match, pointDataRegex))
+            {
+                if(hasParsedPointData)
+                {
+                    std::cerr << "Already parsed POINT_DATA" << std::endl;
+                    goto error;
+                }
+                hasParsedPointData = true;
+                parseValues(f, m_ptsData);
+            }
+
+            //Parse cell data if exist
+            else if(std::regex_match(line, match, cellDataRegex))
+            {
+                if(hasParsedCellData)
+                {
+                    std::cerr << "Already parsed CELL_DATA" << std::endl;
+                    goto error;
+                }
+                hasParsedCellData = true;
+                parseValues(f, m_cellData);
+            }
         }
 
-        //Parse cell data if exist
-        if(std::regex_match(line, match, cellDataRegex))
-        {
-            pointCellDataParsed = true;
-            parseValues(f, m_cellData);
-        }
-
-        //Error
-        if(!pointCellDataParsed)
-        {
-            std::cerr << "Expecting POINT_DATA token" << std::endl;
-            goto error;
-        }
-
+    success:
 #if WIN32
 #else
         fclose(f);
@@ -482,32 +493,26 @@ namespace sereno
                         GET_VTK_NEXT_LINE(file)
                         if(!std::regex_match(line, match, fieldValueRegex))
                         {
-                            std::cerr << "Error at reading a field value\n";
+                            std::cerr << "Error at reading a field value\n" << line;
                             return false;
                         }
 
                         VTKFieldValue fieldValue;
                         fieldValue.name            = match[1].str();
-                        fieldValue.nbTuples        = std::stoi(match[2].str());
-                        fieldValue.nbValuePerTuple = std::stoi(match[3].str());
+                        fieldValue.nbTuples        = std::stoi(match[3].str());
+                        fieldValue.nbValuePerTuple = std::stoi(match[2].str());
                         fieldValue.format          = vtkStringToFormat(match[4].str());
                         fieldValue.offset          = ftell(file);
+
                         value.fieldData.values.push_back(fieldValue);
 
                         fseek(file, fieldValue.nbTuples*fieldValue.nbValuePerTuple*VTKValueFormatInt(fieldValue.format), SEEK_CUR);
-                        GET_VTK_NEXT_LINE(file)
-                        if(line != "\n")
-                        {
-                            std::cerr << "Unexpected token\n";
-                            return false;
-                        }
+                        char endLine;
+                        fread(&endLine, 1, 1, file);
+                        if(endLine != '\n')
+                            fseek(file, -1, SEEK_CUR);
 
-                        filePos = ftell(file);
-                        line = getLineFromFile(file);
-                        if(line == "METADATA\n")
-                            parseMetadata(file);
-                        else
-                            fseek(file, filePos, SEEK_SET);
+                        VTK_PARSE_METADATA(file)
                     }
                     data.values.push_back(value);
                 }
@@ -520,7 +525,7 @@ namespace sereno
 
             else
             {
-                fseek(file, filePos, SEEK_CUR);
+                fseek(file, filePos, SEEK_SET);
                 break;
             }
         }
@@ -698,6 +703,7 @@ namespace sereno
                     val.d = readDouble(buffer);
                     break;
                 case VTK_UNSIGNED_CHAR:
+                case VTK_CHAR:
                     val.c = buffer[0];
                     break;
                 default:

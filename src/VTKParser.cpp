@@ -385,7 +385,7 @@ namespace sereno
         std::smatch match;
         std::string line;
 
-        std::setlocale(LC_ALL, "C");
+        setlocale(LC_ALL, "C");
 
         try
         {

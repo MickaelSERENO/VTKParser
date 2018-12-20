@@ -166,6 +166,8 @@ namespace sereno
             return false;
         FILE* f = m_file;
 #else
+        if(m_fd == -1 || m_mmapData == MAP_FAILED)
+            return false;
         FILE* f = fdopen(dup(m_fd), "r");
 #endif
         fseek(f, 0, SEEK_SET);

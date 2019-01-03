@@ -62,8 +62,9 @@ namespace sereno
 
         //Open the file and do a memory mapping on it
 #ifdef WIN32
-        m_fd = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                          FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_TEMPORARY, INVALID_HANDLE_VALUE);
+		std::wstring stemp = std::wstring(path.begin(), path.end());
+		LPCWSTR sw = stemp.c_str();
+		m_fd = CreateFile2(sw, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
         if(m_fd == INVALID_HANDLE_VALUE)
             return;
         m_file = _fdopen(_open_osfhandle((intptr_t)m_fd, _O_RDONLY), "r");

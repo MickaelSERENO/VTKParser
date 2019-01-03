@@ -8,10 +8,12 @@
 extern "C" {
 #endif
 
-#ifdef WIN32
-#define DllExport   __declspec( dllexport )
+#if WIN32
+#define DllExport __declspec( dllexport ) 
+#define WINAPI __stdcall
 #else
 #define DllExport
+#define WINAPI
 #endif
 
 #define VTK_ENUM_BODY_STR(name, value, str)     \

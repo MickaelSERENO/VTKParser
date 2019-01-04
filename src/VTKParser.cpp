@@ -52,40 +52,11 @@ namespace sereno
 
     VTKParser::VTKParser(const std::string& path)
     {
-        //Get file statistics
-        struct stat st;
-        if(stat(path.c_str(), &st) == -1)
-        {
-            std::cerr << "Could not open " << path.c_str() << std::endl;
-            return;
-        }
-
         //Open the file and do a memory mapping on it
-#ifdef WIN32
-		std::wstring stemp = std::wstring(path.begin(), path.end());
-		LPCWSTR sw = stemp.c_str();
-		m_fd = CreateFile2(sw, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
-        if(m_fd == INVALID_HANDLE_VALUE)
-            return;
-        m_file = _fdopen(_open_osfhandle((intptr_t)m_fd, _O_RDONLY), "r");
-#else
-        m_fileLen = st.st_size;
-        m_fd       = open(path.c_str(), O_RDONLY);
-        m_mmapData = mmap(NULL, m_fileLen, PROT_READ, MAP_PRIVATE, m_fd, 0);
-        if(m_mmapData == MAP_FAILED)
-        {
-            std::cerr << "Could not map the memory over the file " << path.c_str() << std::endl;
-            return;
-        }
-#endif
+        m_file = fopen(path.c_str(), "r");
     }
 
-    VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type)
-#ifdef WIN32
-        , m_fd(mvt.m_fd), m_file(mvt.m_file)
-#else
-        , m_fd(mvt.m_fd), m_mmapData(mvt.m_mmapData), m_fileLen(mvt.m_fileLen)
-#endif
+    VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type), m_file(mvt.m_file)
     {
         switch(mvt.m_type)
         {
@@ -96,13 +67,7 @@ namespace sereno
                 break;
         }
 
-#ifdef WIN32
         mvt.m_file = NULL;
-        mvt.m_fd   = INVALID_HANDLE_VALUE;
-#else
-        mvt.m_fd = -1;
-        mvt.m_mmapData = MAP_FAILED;
-#endif
         mvt.m_type     = VTK_DATASET_TYPE_NONE;
     }
 
@@ -122,15 +87,8 @@ namespace sereno
 
     void VTKParser::closeParser()
     {
-#ifdef WIN32
         if(m_file)
             fclose(m_file);
-#else
-        if(m_mmapData != MAP_FAILED)
-            munmap(m_mmapData, m_fileLen);
-        if(m_fd != -1)
-            close(m_fd);
-#endif
     }
 
 #define GET_VTK_NEXT_LINE(x) \
@@ -162,16 +120,7 @@ namespace sereno
 
     bool VTKParser::parse()
     {
-#ifdef WIN32
-        if(!m_file)
-            return false;
-        FILE* f = m_file;
-#else
-        if(m_fd == -1 || m_mmapData == MAP_FAILED)
-            return false;
-        FILE* f = fdopen(dup(m_fd), "r");
-#endif
-        fseek(f, 0, SEEK_SET);
+        fseek(m_file, 0, SEEK_SET);
 
         bool hasParsedPointData = false;
         bool hasParsedCellData  = false;
@@ -179,7 +128,7 @@ namespace sereno
         std::smatch match;
 
         //Version
-        std::string line = getLineFromFile(f);
+        std::string line = getLineFromFile(m_file);
         if(std::regex_match(line, match, versionRegex))
         {
             try
@@ -201,7 +150,7 @@ namespace sereno
         }
 
         //Header
-        m_header = getLineFromFile(f);
+        m_header = getLineFromFile(m_file);
         if(m_header.size() == 0)
         {
             std::cerr << "Not header.\n";
@@ -209,7 +158,7 @@ namespace sereno
         }
 
         //Binary or Ascii ?
-        line = getLineFromFile(f);
+        line = getLineFromFile(m_file);
         if(line != "BINARY\n")
         {
             std::cerr << "Do not handle type other than BINARY. Received " << line << std::endl;
@@ -218,25 +167,25 @@ namespace sereno
         m_fileFormat = VTK_BINARY;
 
         //Parse dataset information
-        GET_VTK_NEXT_LINE(f)
+        GET_VTK_NEXT_LINE(m_file)
         if(std::regex_match(line, match, datasetRegex))
         {
             if(match[1].str() == "UNSTRUCTURED_GRID")
             {
                 m_type = VTK_UNSTRUCTURED_GRID;
-                if(!parseUnstructuredGrid(f))
+                if(!parseUnstructuredGrid(m_file))
                     goto error;
             }
             else if(match[1].str() == "STRUCTURED_GRID")
             {
                 m_type = VTK_STRUCTURED_GRID;
-                if(!parseStructuredGrid(f))
+                if(!parseStructuredGrid(m_file))
                     goto error;
             }
             else if(match[1].str() == "STRUCTURED_POINTS")
             {
                 m_type = VTK_STRUCTURED_POINTS;
-                if(!parseStructuredPoints(f))
+                if(!parseStructuredPoints(m_file))
                     goto error;
             }
             else
@@ -254,7 +203,7 @@ namespace sereno
         for(uint32_t i = 0; i < 2; i++)
         {
             //Check end of file
-            line = getLineFromFile(f);
+            line = getLineFromFile(m_file);
             if(line.size() == 0)
                 goto success;
 
@@ -267,7 +216,7 @@ namespace sereno
                     goto error;
                 }
                 hasParsedPointData = true;
-                parseValues(f, m_ptsData);
+                parseValues(m_file, m_ptsData);
             }
 
             //Parse cell data if exist
@@ -279,21 +228,13 @@ namespace sereno
                     goto error;
                 }
                 hasParsedCellData = true;
-                parseValues(f, m_cellData);
+                parseValues(m_file, m_cellData);
             }
         }
 
     success:
-#if WIN32
-#else
-        fclose(f);
-#endif
         return true;
     error:
-#if WIN32
-#else
-        fclose(f);
-#endif
         return false;
     }
 
@@ -673,12 +614,8 @@ namespace sereno
     void* VTKParser::getAllBinaryValues(size_t offset, uint32_t nbValues, VTKValueFormat format) const
     {
         int sizeFormat = VTKValueFormatInt(format);
-#if WIN32
         uint8_t buffer[8];
         fseek(m_file, offset, SEEK_SET);
-#else
-        uint8_t* buffer = (uint8_t*)m_mmapData + offset;
-#endif
         uint8_t* data = (uint8_t*)malloc(sizeFormat*nbValues);
         union
         {
@@ -690,10 +627,7 @@ namespace sereno
 
         for(uint64_t i = 0; i < nbValues; i++)
         {
-#if WIN32
             fread(buffer, 1, sizeFormat, m_file);
-#else
-#endif
             switch(format)
             {
                 case VTK_INT:
@@ -714,10 +648,6 @@ namespace sereno
                     return NULL;
             }
             memcpy(data+i*sizeFormat, &val.c, sizeFormat);
-#if WIN32
-#else
-            buffer += sizeFormat;
-#endif
         }
         return (void*)data;
     }

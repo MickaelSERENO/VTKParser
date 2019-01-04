@@ -325,14 +325,7 @@ namespace sereno
             uint32_t    m_minorVer = 0;            /*!< The minor version used*/
             uint32_t    m_majorVer = 0;            /*!< The major version used*/
             std::string m_header;
-#ifdef WIN32
-            HANDLE      m_fd   = INVALID_HANDLE_VALUE; /*!< The Windows Handle object*/
             FILE*       m_file = NULL;                 /*!< The VTK file descriptor*/
-#else
-            int         m_fd       = -1;           /*!< The VTK file descriptor*/
-            void*       m_mmapData = MAP_FAILED;   /*!< The memory mapping associated with the opened file*/
-            uint32_t    m_fileLen = 0;             /*!< Record of the file length in bytes*/
-#endif
 
             //The regexes
             static const std::regex versionRegex;      /*!< Regex checking the VERSIONing*/

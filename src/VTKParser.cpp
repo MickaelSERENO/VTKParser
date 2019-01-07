@@ -53,7 +53,7 @@ namespace sereno
     VTKParser::VTKParser(const std::string& path)
     {
         //Open the file and do a memory mapping on it
-        m_file = fopen(path.c_str(), "r");
+        m_file = fopen(path.c_str(), "rb");
     }
 
     VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type), m_file(mvt.m_file)

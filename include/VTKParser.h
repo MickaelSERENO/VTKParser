@@ -123,6 +123,76 @@ namespace sereno
         std::vector<VTKValue> values; /*!< Associated values*/
     };
 
+    /**
+     * \brief  Read VTK Value in the source file. If you have used "parsedAll*" function, use readParsedVTKValue instead
+     *
+     * @tparam T the type to convert (int, float, double, ...)
+     * \param val pointer to the value to convert
+     * \param format the value format
+     *
+     * \return   the value with T type
+     */
+    template <typename T>
+    inline T readVTKValue(void* val, VTKValueFormat format)
+    {
+        uint8_t* v = (uint8_t*)val;
+        switch(format)
+        {
+            case VTK_INT:
+            {
+                return (v[0] << 24) + (v[1] << 16) + 
+                       (v[2] << 8 ) + v[3];
+            }
+            case VTK_DOUBLE:
+            {
+                uint64_t t = ((uint64_t)v[0] << 56) + ((uint64_t)v[1] << 48) +
+                             ((uint64_t)v[2] << 40) + ((uint64_t)v[3] << 32) +
+                             (v[4] << 24) + (v[5] << 16) +
+                             (v[6] << 8 ) + v[7];
+                return *((double*)(&t));
+            }
+            case VTK_FLOAT:
+            {
+                uint32_t t = (v[0] << 24) + (v[1] << 16) + 
+                             (v[2] << 8 ) + v[3];
+                return *((float*)(&t));
+            }
+            case VTK_UNSIGNED_CHAR:
+            case VTK_CHAR:
+                return v[0];
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * \brief  Read VTK Value once parsed (after "parsedAll*" functions)
+     *
+     * @tparam T the type to convert (int, float, double, ...)
+     * \param val pointer to the value to convert
+     * \param format the value format
+     *
+     * \return   the value with T type
+     */
+    template <typename T>
+    inline T readParsedVTKValue(void* val, VTKValueFormat format)
+    {
+        switch(format)
+        {
+            case VTK_INT:
+                return *((uint32_t*)val);
+            case VTK_DOUBLE:
+                return *((double*)val);
+            case VTK_FLOAT:
+                return *((float*)val);
+            case VTK_UNSIGNED_CHAR:
+            case VTK_CHAR:
+                return *((uint8_t*)val);
+            default:
+                return 0;
+        }
+    }
+
     /* \brief VTKParser class. Only support right now STRUCTURED_GRID and BINARY */
     struct DllExport VTKParser
     {
@@ -286,21 +356,6 @@ namespace sereno
             bool parseMetadata(FILE* file);
 
             void* getAllBinaryValues(size_t offset, uint32_t nbValues, VTKValueFormat format) const;
-
-            /** \brief  Read a int value from a VTK buffer
-             * \param buf the buffer to convert
-             * \return  the int value*/
-            static int    readInt(uint8_t* buf);
-
-            /** \brief  Read a float value from a VTK buffer
-             * \param buf the buffer to convert
-             * \return  the float value */
-            static float  readFloat(uint8_t* buf);
-
-            /** \brief  Read a double value from a VTK buffer
-             * \param buf the buffer to convert
-             * \return  the double value */
-            static double readDouble(uint8_t* buf);
 
             /**
              * \brief  Convert a VTK String to a VTKValueFormat (int, double, etc.)

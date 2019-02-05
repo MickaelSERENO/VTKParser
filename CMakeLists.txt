@@ -14,6 +14,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(INSTALL_LIB_DIR       "${CMAKE_INSTALL_PREFIX}/lib"             CACHE PATH "Installation directory for libraries")
 set(INSTALL_INC_DIR       "${CMAKE_INSTALL_PREFIX}/include"         CACHE PATH "Installation directory for headers")
 set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig"   CACHE PATH "Installation directory for pkgconfig (.pc) files")
+set(RELEASE               FALSE                                     CACHE BOOL "Compiling in release mode.")
 
 set(COMPILE_TEST         FALSE CACHE BOOL "Should we compile the test program ?")
 if(MSVC)
@@ -22,17 +23,17 @@ endif()
 
 set(VERSION 1.0)
 
-#Workaround for MSVC not creating DEBUG and RELEASE folder
-foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
-    string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
-    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/bin)
-    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/lib)
-    set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/lib)
-endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
-
-#Debug version
-set(CMAKE_BUILD_TYPE "Debug")
+#Debug/Release version version
+if(RELEASE)
+	MESSAGE(STATUS "Compiling in release mode")
+	set(CMAKE_BUILD_TYPE "Release")
+else()
+	MESSAGE(STATUS "Compiling in Debug mode")
+	set(CMAKE_BUILD_TYPE "Debug")
+endif()
 set(CMAKE_CONFIGURATION_TYPES "Debug" CACHE STRING "" FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Release" CACHE STRING "" FORCE)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 if(MSVC)
@@ -40,6 +41,14 @@ if(MSVC)
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 endif()
+
+#Workaround for MSVC not creating DEBUG and RELEASE folder
+foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
+    string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
+    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/bin)
+    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/lib)
+    set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR}/lib)
+endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 #Set the sources and the headers
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)

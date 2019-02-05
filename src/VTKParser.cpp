@@ -53,8 +53,12 @@ namespace sereno
     VTKParser::VTKParser(const std::string& path)
     {
         //Open the file and do a memory mapping on it
-        m_file = fopen(path.c_str(), "rb");
-    }
+#ifdef WIN32
+        fopen_s(&m_file, path.c_str(), "rb");
+#else
+		m_file = fopen(path.c_str(), "rb");
+#endif
+	}
 
     VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type), m_file(mvt.m_file)
     {
@@ -627,17 +631,17 @@ namespace sereno
 
         for(uint64_t i = 0; i < nbValues; i++)
         {
-            fread(buffer, 1, sizeFormat, m_file);
+            fread(buffer, sizeFormat, 1, m_file);
             switch(format)
             {
                 case VTK_INT:
-                    val.i = readInt(buffer);
+                    val.i = readVTKValue<int>(buffer, VTK_INT);
                     break;
                 case VTK_FLOAT:
-                    val.f = readFloat(buffer);
+                    val.f = readVTKValue<float>(buffer, VTK_FLOAT);
                     break;
                 case VTK_DOUBLE:
-                    val.d = readDouble(buffer);
+                    val.d = readVTKValue<double>(buffer, VTK_DOUBLE);
                     break;
                 case VTK_UNSIGNED_CHAR:
                 case VTK_CHAR:
@@ -647,7 +651,7 @@ namespace sereno
                     free(data);
                     return NULL;
             }
-            memcpy(data+i*sizeFormat, &val.c, sizeFormat);
+            memcpy(data+i*sizeFormat, &val, sizeFormat);
         }
         return (void*)data;
     }
@@ -671,30 +675,5 @@ namespace sereno
             cell->fillElementBuffer(cellValues, buffer + offset);
             offset += cell->sizeBuffer(cellValues);
         }
-    }
-    
-/*----------------------------------------------------------------------------*/
-/*---------------------------The read <T> functions---------------------------*/
-/*----------------------------------------------------------------------------*/
-
-    int VTKParser::readInt(uint8_t* buf)
-    {
-        return (buf[3] << 0 ) + (buf[2] << 8 )+
-               (buf[1] << 16) + (buf[0] << 24);  
-    }
-
-    float VTKParser::readFloat(uint8_t* buf)
-    {
-        int i = readInt(buf);
-        return *(float*)(&i);
-    }
-
-    double VTKParser::readDouble(uint8_t* buf)
-    {
-        int64_t i = ((uint64_t)buf[7] << 0 ) + ((uint64_t)buf[6] << 8 ) +
-                    ((uint64_t)buf[5] << 16) + ((uint64_t)buf[4] << 24) +
-                    ((uint64_t)buf[3] << 32) + ((uint64_t)buf[2] << 40) +
-                    ((uint64_t)buf[1] << 48) + ((uint64_t)buf[0] << 56);
-        return *(double*)(&i);
     }
 }

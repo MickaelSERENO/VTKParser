@@ -7,3 +7,5 @@ compile_commands.json
 *.pc
 CMakeCache.txt
 *.exe
+Build
+build

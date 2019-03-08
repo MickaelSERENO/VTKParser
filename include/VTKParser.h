@@ -208,6 +208,10 @@ namespace sereno
             /* \brief Destructor */
             ~VTKParser();
 
+            /* \brief  Get the file path opened
+             * \return  the file path opened */
+            const std::string& getPath() const {return m_path;}
+
             /* \brief Close the VTK Parser */
             void closeParser();
 
@@ -376,6 +380,8 @@ namespace sereno
             VTKData  m_ptsData;                    /*!< The point data values*/
 
             VTKFileFormat         m_fileFormat;    /*!< The file format (BINARY or ASCII)*/
+
+            std::string m_path;                    /*!< The dataset path*/
 
             uint32_t    m_minorVer = 0;            /*!< The minor version used*/
             uint32_t    m_majorVer = 0;            /*!< The major version used*/

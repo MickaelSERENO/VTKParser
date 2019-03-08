@@ -50,7 +50,7 @@ namespace sereno
         return VTK_NO_VALUE_FORMAT;
     }
 
-    VTKParser::VTKParser(const std::string& path)
+    VTKParser::VTKParser(const std::string& path) : m_path(path)
     {
         //Open the file and do a memory mapping on it
 #ifdef WIN32
@@ -60,7 +60,7 @@ namespace sereno
 #endif
 	}
 
-    VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type), m_file(mvt.m_file)
+    VTKParser::VTKParser(VTKParser&& mvt) : m_type(mvt.m_type), m_path(std::move(mvt.m_path)), m_file(mvt.m_file)
     {
         switch(mvt.m_type)
         {

@@ -621,13 +621,6 @@ namespace sereno
         uint8_t buffer[8];
         fseek(m_file, offset, SEEK_SET);
         uint8_t* data = (uint8_t*)malloc(sizeFormat*nbValues);
-        union
-        {
-            int     i;
-            float   f;
-            double  d;
-            uint8_t c;
-        }val;
 
         for(uint64_t i = 0; i < nbValues; i++)
         {
@@ -635,25 +628,33 @@ namespace sereno
             switch(format)
             {
                 case VTK_INT:
-                    val.i = readVTKValue<int>(buffer, VTK_INT);
+                {
+                    uint32_t val = readVTKValue<uint32_t>(buffer, VTK_INT);
+                    memcpy(data+i*sizeFormat, &val, sizeof(val));
                     break;
+                }
                 case VTK_FLOAT:
-                    val.f = readVTKValue<float>(buffer, VTK_FLOAT);
+                {
+                    float val = readVTKValue<float>(buffer, VTK_FLOAT);
+                    memcpy(data+i*sizeFormat, &val, sizeof(val));
                     break;
+                }
                 case VTK_DOUBLE:
-                    val.d = readVTKValue<double>(buffer, VTK_DOUBLE);
+                {
+                    double val = readVTKValue<double>(buffer, VTK_DOUBLE);
+                    memcpy(data+i*sizeFormat, &val, sizeof(val));
                     break;
+                }
                 case VTK_UNSIGNED_CHAR:
                 case VTK_CHAR:
-                    val.c = buffer[0];
+                    data[i] = buffer[0];
                     break;
                 default:
                     free(data);
                     return NULL;
             }
-            memcpy(data+i*sizeFormat, &val, sizeFormat);
         }
-        return (void*)data;
+        return data;
     }
 
     void VTKParser::fillUnstructuredGridCellElementBuffer(uint32_t nbCells, int32_t* cellValues, int32_t* cellTypes, int32_t* buffer)

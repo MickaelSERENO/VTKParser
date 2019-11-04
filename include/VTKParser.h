@@ -150,11 +150,17 @@ namespace sereno
             }
             case VTK_DOUBLE:
             {
-                uint64_t t = ((uint64_t)v[0] << 56) + ((uint64_t)v[1] << 48) +
-                             ((uint64_t)v[2] << 40) + ((uint64_t)v[3] << 32) +
-                             (v[4] << 24) + (v[5] << 16) +
-                             (v[6] << 8 ) + v[7];
-                return *((double*)(&t));
+                static_assert(sizeof(double) == sizeof(uint64_t), "Double size differt from uint64_t size...");
+                union
+                {
+                    uint64_t _i;
+                    double _d;
+                }t; 
+                t._i = ((uint64_t)v[0] << 56) + ((uint64_t)v[1] << 48) +
+                       ((uint64_t)v[2] << 40) + ((uint64_t)v[3] << 32) +
+                       ((uint64_t)v[4] << 24) + ((uint64_t)v[5] << 16) +
+                       ((uint64_t)v[6] << 8 ) + v[7];
+                return t._d;
             }
             case VTK_FLOAT:
             {
@@ -185,14 +191,14 @@ namespace sereno
         switch(format)
         {
             case VTK_INT:
-                return *((uint32_t*)val);
+                return *reinterpret_cast<uint32_t*>(val);
             case VTK_DOUBLE:
-                return *((double*)val);
+                return *reinterpret_cast<double*>(val);
             case VTK_FLOAT:
-                return *((float*)val);
+                return *reinterpret_cast<float*>(val);
             case VTK_UNSIGNED_CHAR:
             case VTK_CHAR:
-                return *((uint8_t*)val);
+                return *reinterpret_cast<uint8_t*>(val);
             default:
                 return 0;
         }

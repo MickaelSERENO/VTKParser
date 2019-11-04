@@ -34,13 +34,18 @@ namespace sereno
         VTK_DATASET_ATTRIBUTES
     };
 
-    /** \brief  Represents one value in the field list */
-    struct VTKFieldValue
+    /** \brief  Possess FieldValue MetaData */
+    struct FieldValueMetaData
     {
         std::string    name;            /*!< The field name*/
         VTKValueFormat format;          /*!< The field format value*/
         uint32_t       nbTuples;        /*!< Number of tuples*/
         uint32_t       nbValuePerTuple; /*!< Number of values per tuple*/
+    };
+
+    /** \brief  Represents one value in the field list */
+    struct VTKFieldValue : public FieldValueMetaData
+    {
         size_t         offset;          /*!< Offset (in bytes) for reading the field value data*/
     };
 

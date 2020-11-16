@@ -43,6 +43,27 @@ namespace sereno
         uint32_t       nbValuePerTuple; /*!< Number of values per tuple*/
     };
 
+    /** \brief  Value per value equal operator
+     * \param l the left operator to test
+     * \param r the right operator to test
+     * \return   true if they contain the same metadata, false otherwise */
+    inline bool operator==(const FieldValueMetaData& l, const FieldValueMetaData& r)
+    {
+        return l.name            == r.name     && 
+               l.format          == r.format   && 
+               l.nbTuples        == r.nbTuples &&
+               l.nbValuePerTuple == r.nbValuePerTuple;
+    }
+
+    /** \brief  Value per value different operator
+     * \param l the left operator to test
+     * \param r the right operator to test
+     * \return   false if they contain the same metadata, true otherwise */
+    inline bool operator!=(const FieldValueMetaData& l, const FieldValueMetaData& r)
+    {
+        return !(l == r);
+    }
+
     /** \brief  Represents one value in the field list */
     struct VTKFieldValue : public FieldValueMetaData
     {

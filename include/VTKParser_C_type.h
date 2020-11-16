@@ -172,6 +172,19 @@ extern "C" {
             double   origin[3];  /*!< The origin (offset) of the points*/
         };
 
+        inline bool operator==(const VTKStructuredPoints& p1, const VTKStructuredPoints& p2)
+        {
+            for(uint8_t i = 0; i < 3; i++)
+                if(p1.size[i] != p2.size[i] || p1.spacing[i] != p2.spacing[i] || p1.origin[i] != p2.origin[i])
+                    return false;
+            return true;
+        }
+
+        inline bool operator!=(const VTKStructuredPoints& p1, const VTKStructuredPoints& p2)
+        {
+            return !(p1 == p2);
+        }
+
 #ifdef __cplusplus
     }
 }

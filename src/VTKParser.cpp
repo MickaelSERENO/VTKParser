@@ -8,8 +8,8 @@ namespace sereno
     const std::regex VTKParser::pointsRegex("^POINTS (\\d+) (\\w+)\\s*");
     const std::regex VTKParser::cellsRegex("^CELLS (\\d+) (\\d+)\\s*");
     const std::regex VTKParser::dimensionsRegex("^DIMENSIONS (\\d+) (\\d+) (\\d+)\\s*");
-    const std::regex VTKParser::spacingRegex("^SPACING ([+-]?\\d*.?\\d+) ([+-]?\\d*.?\\d+) ([+-]?\\d*.?\\d+)\\s*");
-    const std::regex VTKParser::originRegex("^ORIGIN ([+-]?\\d*.?\\d+) ([+-]?\\d*.?\\d+) ([+-]?\\d*.?\\d+)\\s*");
+    const std::regex VTKParser::spacingRegex("^SPACING ([+-]?\\d*.?\\d+(?:e[+-]?\\d+)?) ([+-]?\\d*.?\\d+(?:e[+-]?\\d+)?) ([+-]?\\d*.?\\d+(?:e[+-]?\\d+)?)\\s*");
+    const std::regex VTKParser::originRegex("^ORIGIN ([+-]?\\d*.?\\d+(?:e[+-]?\\d+)?) ([+-]?\\d*.?\\d+(?:e[+-]?\\d+)?) ([+-]?\\d*.?\\d+(?:e[+-]?\\d+)?)\\s*");
     const std::regex VTKParser::pointDataRegex("^POINT_DATA (\\d+)\\s*");
     const std::regex VTKParser::cellDataRegex("^CELL_DATA (\\d+)\\s*");
     const std::regex VTKParser::informationRegex("^INFORMATION (\\d+)\\s*");
@@ -360,10 +360,7 @@ namespace sereno
                 {
                     parsedOrigin = true;
                     for(uint32_t j = 0; j < 3; j++)
-                    {
                         m_strPoints.origin[j] = std::stod(match[j+1].str());
-                        std::cerr << std::stod(match[j+1].str()) << "\n";
-                    }
                     VTK_PARSE_METADATA(file)
                 }
                 else

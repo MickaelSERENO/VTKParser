@@ -82,7 +82,7 @@ namespace sereno
         switch(m_type)
         {
             case VTK_STRUCTURED_GRID:
-                delete(&m_grid);
+                m_grid.~VTKGrid();
                 break;
             default:
                 break;
